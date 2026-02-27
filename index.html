@@ -12,11 +12,12 @@
         video, canvas { background: #000; width: 100%; border-radius: 16px; border: 2px solid #fff; min-height: 250px; }
         .active-mode { background-color: #2563eb !important; color: white !important; }
         
-        /* สไตล์เพิ่มเติมสำหรับ Image Comparison */
-        .compare-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px; }
+        /* สไตล์สำหรับการพับเก็บ (Accordion) */
+        .compare-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px; transition: all 0.3s ease; }
         .img-label { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.6); color: white; padding: 2px 8px; border-radius: 6px; font-size: 10px; pointer-events: none; z-index: 10; }
-        .result-card { transition: all 0.3s ease; animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .result-card { transition: all 0.3s ease; overflow: hidden; }
+        .collapsed .compare-container { display: none; }
+        .rotate-180 { transform: rotate(180deg); }
     </style>
 </head>
 <body class="min-h-screen flex flex-col md:flex-row">
@@ -72,12 +73,12 @@
         </div>
 
         <div id="imageSection" class="hidden space-y-6">
-            <div onclick="document.getElementById('imageInput').click()" class="group bg-white p-12 rounded-[2rem] border-4 border-dashed border-slate-200 text-center cursor-pointer hover:border-blue-400 transition-all shadow-sm">
+            <div onclick="document.getElementById('imageInput').click()" class="group bg-white p-8 rounded-[2rem] border-4 border-dashed border-slate-200 text-center cursor-pointer hover:border-blue-400 transition-all shadow-sm">
                 <input type="file" id="imageInput" accept="image/*" multiple class="hidden">
-                <p class="text-slate-600 font-bold text-xl">📤 คลิกเพื่ออัปโหลดรูปภาพ (เลือกได้หลายไฟล์)</p>
-                <p class="text-slate-400 text-sm mt-2">ภาพจะแสดงผลเปรียบเทียบแบบ Before & After</p>
+                <p class="text-slate-600 font-bold text-xl">📤 คลิกเพื่ออัปโหลดรูปภาพ</p>
+                <p class="text-slate-400 text-sm mt-2">แสดงผลแบบเปรียบเทียบ และสามารถคลิกที่แถบเพื่อย่อเก็บได้</p>
             </div>
-            <div id="imageResultsList" class="flex flex-col gap-6"></div>
+            <div id="imageResultsList" class="flex flex-col gap-4"></div>
         </div>
     </div>
 
@@ -95,6 +96,14 @@
         function addLog(msg) {
             systemLog.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
             systemLog.scrollTop = systemLog.scrollHeight;
+        }
+
+        // --- ระบบย่อ/ขยาย (Accordion) ---
+        function toggleCollapse(id) {
+            const card = document.getElementById(`card-${id}`);
+            const arrow = document.getElementById(`arrow-${id}`);
+            card.classList.toggle('collapsed');
+            arrow.classList.toggle('rotate-180');
         }
 
         // --- CSV Logging ---
@@ -135,7 +144,6 @@
                     document.getElementById('camBtn').innerText = "🚫 ปิดกล้อง";
                     document.getElementById('runBtn').disabled = false;
                     document.getElementById('runBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-                    addLog("📸 เปิดกล้องแล้ว");
                 } catch (e) { addLog("❌ เปิดกล้องไม่ได้"); }
             } else {
                 stopAll();
@@ -144,13 +152,10 @@
 
         function loadVideo(input) {
             if (input.files && input.files[0]) {
-                const url = URL.createObjectURL(input.files[0]);
-                vSource.srcObject = null;
-                vSource.src = url;
+                vSource.src = URL.createObjectURL(input.files[0]);
                 vSource.play();
                 document.getElementById('runBtn').disabled = false;
                 document.getElementById('runBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-                addLog("🎞️ โหลดวิดีโอสำเร็จ");
             }
         }
 
@@ -162,7 +167,6 @@
             if (isAIRunning) {
                 vCanvas.width = vSource.videoWidth || 640;
                 vCanvas.height = vSource.videoHeight || 480;
-                addLog("🚀 AI เริ่มทำงาน...");
                 renderLoop();
             }
         }
@@ -176,7 +180,6 @@
             document.getElementById('camBtn').innerText = "📹 เปิดกล้อง";
             document.getElementById('runBtn').disabled = true;
             document.getElementById('runBtn').classList.add('opacity-50', 'cursor-not-allowed');
-            addLog("⏹️ ปิดระบบทั้งหมด");
         }
 
         async function renderLoop() {
@@ -195,7 +198,7 @@
                         img.onload = () => {
                             ctx.drawImage(img, 0, 0, vCanvas.width, vCanvas.height);
                             updateStatus(data.status, data.pixel_count);
-                            addToLogs(isCameraOpen ? "Webcam" : "Video", data.status, data.pixel_count);
+                            addToLogs("Stream", data.status, data.pixel_count);
                             requestAnimationFrame(renderLoop);
                         };
                         img.src = "data:image/jpeg;base64," + data.image;
@@ -210,34 +213,34 @@
             el.className = `text-center py-5 rounded-2xl text-xl font-bold transition-all ${s === 'MISSING' ? 'bg-red-600 text-white' : 'bg-green-500 text-white'}`;
         }
 
-        // --- ปรับปรุงระบบรูปภาพ (Comparison View) ---
+        // --- ระบบรูปภาพ (Comparison + Accordion) ---
         document.getElementById('imageInput').onchange = async (e) => {
             for (let file of e.target.files) {
                 const id = 'img-' + Math.random().toString(36).substr(2, 5);
                 const originalUrl = URL.createObjectURL(file);
                 
                 const cardHtml = `
-                    <div id="card-${id}" class="result-card bg-white p-6 rounded-[2rem] border border-slate-200 shadow-lg relative">
-                        <div class="flex justify-between items-center mb-4">
+                    <div id="card-${id}" class="result-card bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div onclick="toggleCollapse('${id}')" class="flex justify-between items-center p-4 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-all border-b">
                             <div class="flex items-center gap-3">
-                                <span class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-bold">📄 ${file.name}</span>
-                                <p id="st-${id}" class="font-bold text-slate-400 italic">กำลังวิเคราะห์...</p>
+                                <span id="arrow-${id}" class="text-slate-400 transition-transform">▼</span>
+                                <span class="bg-blue-600 text-white px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Image</span>
+                                <span class="text-slate-700 font-bold text-sm truncate max-w-[150px]">${file.name}</span>
+                                <p id="st-${id}" class="font-bold text-slate-400 text-sm italic">วิเคราะห์...</p>
                             </div>
-                            <button onclick="document.getElementById('card-${id}').remove()" class="text-slate-400 hover:text-red-500 transition-colors p-2 text-xl">
-                                ✕
-                            </button>
+                            <button onclick="event.stopPropagation(); document.getElementById('card-${id}').remove()" class="text-slate-300 hover:text-red-500 text-sm px-2">ลบรายการ</button>
                         </div>
                         
-                        <div class="compare-container">
-                            <div class="relative group">
-                                <span class="img-label">ORIGINAL</span>
+                        <div class="compare-container p-6 pt-2">
+                            <div class="relative">
+                                <span class="img-label">ต้นฉบับ</span>
                                 <img src="${originalUrl}" class="w-full h-auto rounded-2xl border bg-slate-50 object-contain min-h-[250px]">
                             </div>
-                            <div class="relative group">
-                                <span class="img-label">AI PROCESSED</span>
+                            <div class="relative">
+                                <span class="img-label">AI วิเคราะห์</span>
                                 <img id="${id}" class="w-full h-auto rounded-2xl border bg-slate-100 object-contain min-h-[250px]">
                                 <div id="loader-${id}" class="absolute inset-0 flex items-center justify-center bg-white/60 rounded-2xl">
-                                     <div class="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent"></div>
+                                     <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
                                 </div>
                             </div>
                         </div>
@@ -254,21 +257,18 @@
                     const res = await fetch(API_URL, { method: 'POST', body: fd });
                     const data = await res.json();
                     
-                    const resultImg = document.getElementById(id);
-                    resultImg.src = "data:image/jpeg;base64," + data.image;
+                    document.getElementById(id).src = "data:image/jpeg;base64," + data.image;
                     document.getElementById(`loader-${id}`).classList.add('hidden');
                     
                     const statusEl = document.getElementById(`st-${id}`);
-                    statusEl.innerText = data.status === "MISSING" ? `🚨 พบจุดผิดปกติ (${data.pixel_count} px)` : `✅ ปกติ (${data.pixel_count} px)`;
-                    statusEl.className = `font-bold ${data.status === 'MISSING' ? 'text-red-600' : 'text-green-600'}`;
+                    statusEl.innerText = data.status === "MISSING" ? `🚨 MISSING (${data.pixel_count} px)` : `✅ NORMAL`;
+                    statusEl.className = `font-bold text-sm ${data.status === 'MISSING' ? 'text-red-600' : 'text-green-600'}`;
                     
-                    addToLogs("Image: " + file.name, data.status, data.pixel_count);
+                    addToLogs(file.name, data.status, data.pixel_count);
                 } catch (error) {
-                    document.getElementById(`st-${id}`).innerText = "❌ เกิดข้อผิดพลาดในการเชื่อมต่อ";
-                    document.getElementById(`loader-${id}`).innerHTML = "<p class='text-red-500 font-bold'>Error</p>";
+                    document.getElementById(`st-${id}`).innerText = "❌ ผิดพลาด";
                 }
             }
-            // Reset input so the same file can be uploaded again
             e.target.value = "";
         };
 
