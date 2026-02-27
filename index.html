@@ -9,15 +9,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700&display=swap');
         body { font-family: 'Kanit', sans-serif; background: #f0f2f5; }
         .log-box { font-family: monospace; font-size: 11px; height: 120px; overflow-y: auto; background: #1a1a1a; color: #00ff00; padding: 12px; border-radius: 12px; }
-        /* ปรับให้ Video และ Canvas แสดงผลแน่นอน */
-        video, canvas { 
-            background: #000; 
-            width: 100%; 
-            min-height: 300px; 
-            border-radius: 16px; 
-            border: 2px solid #334155;
-            display: block; 
-        }
+        video, canvas { background: #000; width: 100%; min-height: 300px; border-radius: 16px; border: 2px solid #334155; display: block; }
         .active-mode { background-color: #2563eb !important; color: white !important; }
         .img-label { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #60a5fa; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; z-index: 20; }
     </style>
@@ -26,13 +18,11 @@
 
     <div class="w-full md:w-80 bg-slate-900 text-white p-6 flex-shrink-0 shadow-2xl overflow-y-auto">
         <h2 class="text-2xl font-bold mb-6 text-blue-400">⚙️ แผงควบคุม</h2>
-        
         <div class="space-y-6">
             <div>
                 <label class="block text-sm text-slate-400 mb-2">Pixel Threshold</label>
                 <input type="number" id="pxThreshold" value="15" class="w-full bg-slate-800 p-3 rounded-xl border border-slate-700 outline-none text-blue-400 font-bold">
             </div>
-
             <div>
                 <div class="flex justify-between mb-2">
                     <label class="text-sm text-slate-400">Confidence</label>
@@ -41,22 +31,15 @@
                 <input type="range" id="inpConfidence" min="0.10" max="0.95" step="0.05" value="0.35" 
                     oninput="document.getElementById('valConfidence').innerText = parseFloat(this.value).toFixed(2)">
             </div>
-
             <hr class="border-slate-800">
-
-            <div class="p-4 bg-slate-800 rounded-2xl border border-slate-700">
-                <button onclick="exportToCSV()" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all shadow-lg mb-2">📊 Download CSV</button>
-                <p id="logCount" class="text-[10px] text-center text-slate-500">บันทึกแล้ว: 0 รายการ</p>
-            </div>
-
             <div id="systemLog" class="log-box text-xs">ระบบพร้อม...</div>
-            <button onclick="location.reload()" class="w-full py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl font-bold border border-slate-700 mt-4">🔄 รีเซ็ตหน้าเว็บ</button>
+            <button onclick="location.reload()" class="w-full py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl font-bold border border-slate-700 mt-4">🔄 รีเซ็ตระบบ</button>
         </div>
     </div>
 
     <div class="flex-1 p-6 md:p-10 overflow-y-auto">
         <header class="mb-8 flex justify-between items-center border-b pb-8">
-            <h1 class="text-4xl font-extrabold text-slate-800 tracking-tight">R2U-NET <span class="text-blue-600">PRO</span></h1>
+            <h1 class="text-4xl font-extrabold text-slate-800">R2U-NET <span class="text-blue-600">PRO</span></h1>
             <div class="flex gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
                 <button onclick="setMode('image')" id="btnImage" class="px-6 py-2.5 rounded-xl font-bold transition-all text-slate-500">📷 รูปภาพ</button>
                 <button onclick="setMode('video')" id="btnVideo" class="px-6 py-2.5 rounded-xl font-bold transition-all active-mode text-white">🎥 วิดีโอ/กล้องสด</button>
@@ -65,34 +48,34 @@
 
         <div id="videoSection" class="space-y-6">
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-2">
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">อัปโหลดวิดีโอ</p>
-                    <input type="file" id="videoInput" accept="video/*" class="w-full text-sm block" onchange="handleVideoUpload(this)">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase mb-2">1. เลือกไฟล์วิดีโอ</p>
+                    <input type="file" id="videoInput" accept="video/*" class="w-full text-sm" onchange="handleVideoUpload(this)">
                 </div>
                 <div class="flex items-end gap-2">
-                    <button id="camBtn" onclick="toggleCamera()" class="flex-1 py-3 bg-slate-800 text-white font-bold rounded-xl hover:bg-black transition-all">📹 เปิดกล้อง</button>
-                    <button id="runBtn" onclick="toggleAI()" disabled class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl opacity-50 cursor-not-allowed transition-all">▶️ เริ่มประมวลผล AI</button>
+                    <button id="camBtn" onclick="toggleCamera()" class="flex-1 py-3 bg-slate-800 text-white font-bold rounded-xl">📹 เปิดกล้อง</button>
+                    <button id="runBtn" onclick="toggleAI()" disabled class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl opacity-50">▶️ เริ่มรัน AI</button>
                 </div>
             </div>
-            
-            <div id="vStatus" class="text-center py-5 rounded-2xl text-xl font-bold bg-slate-100 text-slate-400 border border-slate-200 uppercase tracking-widest transition-all">
-                รอนำเข้าวิดีโอหรือเปิดกล้อง...
+
+            <div id="vStatus" class="text-center py-5 rounded-2xl text-xl font-bold bg-slate-100 text-slate-400 border border-slate-200">
+                รอนำเข้าวิดีโอ...
             </div>
-            
+
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 <div class="relative">
-                    <span class="img-label">SOURCE FEED</span>
-                    <video id="vSource" controls playsinline muted loop crossorigin="anonymous"></video>
+                    <span class="img-label">SOURCE</span>
+                    <video id="vSource" controls muted playsinline loop crossorigin="anonymous"></video>
                 </div>
                 <div class="relative">
-                    <span class="img-label">AI INSPECTION</span>
+                    <span class="img-label">AI PREDICTION</span>
                     <canvas id="vCanvas"></canvas>
                 </div>
             </div>
         </div>
 
         <div id="imageSection" class="hidden space-y-6">
-            <div onclick="document.getElementById('imageInput').click()" class="group bg-white p-12 rounded-[2rem] border-4 border-dashed border-slate-200 text-center cursor-pointer hover:border-blue-400 transition-all shadow-sm">
+            <div onclick="document.getElementById('imageInput').click()" class="bg-white p-12 rounded-[2rem] border-4 border-dashed border-slate-200 text-center cursor-pointer shadow-sm">
                 <input type="file" id="imageInput" accept="image/*" multiple class="hidden">
                 <p class="text-slate-600 font-bold text-xl">📤 คลิกเพื่ออัปโหลดรูปภาพ</p>
             </div>
@@ -101,123 +84,93 @@
     </div>
 
     <script>
-        // ใช้ URL ของคุณ
         const API_URL = "https://phuwarin-my-cnn-api.hf.space/predict"; 
         const vSource = document.getElementById('vSource');
         const vCanvas = document.getElementById('vCanvas');
         const ctx = vCanvas.getContext('2d');
         const systemLog = document.getElementById('systemLog');
         
-        let isCameraOpen = false;
         let isAIRunning = false;
-        let inspectionData = [];
+        let isCameraOpen = false;
 
         function addLog(msg) {
             systemLog.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
             systemLog.scrollTop = systemLog.scrollHeight;
         }
 
+        // --- ฟังชันนำเข้าวิดีโอแบบสากล (ใช้ Blob URL) ---
         function handleVideoUpload(input) {
             const file = input.files[0];
             if (!file) return;
 
-            addLog("⏳ กำลังโหลดไฟล์: " + file.name);
-            const reader = new FileReader();
+            addLog("⏳ กำลังเตรียมไฟล์: " + file.name);
+            
+            // ยกเลิก URL เก่าเพื่อคืน Memory
+            if (vSource.src) URL.revokeObjectURL(vSource.src);
+            if (isCameraOpen) stopAll();
 
-            reader.onload = function(e) {
-                // บังคับยัด Source และสั่ง Load ซ้ำ
-                vSource.src = e.target.result;
-                vSource.load(); 
+            const url = URL.createObjectURL(file);
+            vSource.src = url;
+            vSource.load();
+
+            vSource.onloadedmetadata = () => {
+                addLog("✅ วิดีโอโหลดสำเร็จ: " + vSource.videoWidth + "x" + vSource.videoHeight);
+                vCanvas.width = vSource.videoWidth;
+                vCanvas.height = vSource.videoHeight;
                 
-                // ปลดล็อคค่าเบื้องต้น
-                vSource.muted = true;
-                vSource.currentTime = 0.1; // เลื่อนไปนิดนึงเพื่อกระตุ้นเฟรมแรก
-
-                vSource.onloadeddata = function() {
-                    addLog("✅ วิดีโอ Render สำเร็จ!");
-                    vSource.play().then(() => {
-                        vCanvas.width = vSource.videoWidth;
-                        vCanvas.height = vSource.videoHeight;
-                        document.getElementById('runBtn').disabled = false;
-                        document.getElementById('runBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-                        document.getElementById('vStatus').innerText = "วิดีโอมาแล้ว! กดเริ่มรัน AI ได้เลย";
-                    }).catch(err => {
-                        addLog("⚠️ คลิกที่จอด้านซ้ายหนึ่งครั้งเพื่อเริ่มเล่น");
-                    });
-                };
+                // เปิดปุ่มรัน AI
+                document.getElementById('runBtn').disabled = false;
+                document.getElementById('runBtn').classList.remove('opacity-50');
+                document.getElementById('vStatus').innerText = "โหลดเสร็จแล้ว | กดเริ่มรัน AI";
             };
 
-            reader.readAsDataURL(file);
-        }
-
-            reader.onerror = function() {
-                addLog("❌ FileReader เกิดข้อผิดพลาดในการอ่านไฟล์");
+            vSource.onerror = () => {
+                addLog("❌ เบราว์เซอร์เล่นไฟล์นี้ไม่ได้ ลองเปลี่ยนเป็น MP4 มาตรฐาน");
             };
-
-            // เริ่มอ่านไฟล์เป็น DataURL
-            reader.readAsDataURL(file);
         }
 
         async function toggleCamera() {
             if (!isCameraOpen) {
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
-                    vSource.src = "";
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                     vSource.srcObject = stream;
-                    vSource.onloadedmetadata = () => {
-                        vSource.play();
-                        vCanvas.width = vSource.videoWidth;
-                        vCanvas.height = vSource.videoHeight;
-                        isCameraOpen = true;
-                        document.getElementById('camBtn').innerText = "🚫 ปิดกล้อง";
-                        document.getElementById('runBtn').disabled = false;
-                        document.getElementById('runBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-                        addLog("📸 เปิดกล้องสำเร็จ");
-                    };
-                } catch (e) { 
-                    addLog("❌ ไม่สามารถเข้าถึงกล้องได้");
-                    console.error(e);
-                }
+                    vSource.play();
+                    isCameraOpen = true;
+                    document.getElementById('runBtn').disabled = false;
+                    document.getElementById('runBtn').classList.remove('opacity-50');
+                    addLog("📸 กล้องเปิดใช้งาน");
+                } catch (e) { addLog("❌ กล้องขัดข้อง"); }
             } else { stopAll(); }
         }
 
         function toggleAI() {
             isAIRunning = !isAIRunning;
             const btn = document.getElementById('runBtn');
-            btn.innerText = isAIRunning ? "⏸️ หยุดประมวลผล" : "▶️ เริ่มประมวลผล AI";
-            btn.className = isAIRunning ? "flex-1 py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg" : "flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg";
             if (isAIRunning) {
-                addLog("🚀 AI เริ่มวิเคราะห์เฟรม...");
+                btn.innerText = "⏸️ หยุด AI";
+                btn.classList.replace('bg-blue-600', 'bg-red-500');
+                addLog("🚀 เริ่มประมวลผล...");
+                vSource.play();
                 renderLoop();
+            } else {
+                btn.innerText = "▶️ เริ่มรัน AI";
+                btn.classList.replace('bg-red-500', 'bg-blue-600');
+                addLog("⏸️ หยุดชั่วคราว");
             }
         }
 
-        function stopAll() {
-            isCameraOpen = false;
-            isAIRunning = false;
-            if (vSource.srcObject) vSource.srcObject.getTracks().forEach(t => t.stop());
-            vSource.srcObject = null;
-            vSource.src = "";
-            document.getElementById('camBtn').innerText = "📹 เปิดกล้อง";
-            document.getElementById('runBtn').disabled = true;
-            document.getElementById('runBtn').classList.add('opacity-50', 'cursor-not-allowed');
-            addLog("⏹️ ปิดระบบ");
-        }
-
-        // --- ลูปส่งเฟรมไปยัง Backend ---
         async function renderLoop() {
             if (!isAIRunning || vSource.paused || vSource.ended) return;
 
-            // 1. สร้าง Canvas ชั่วคราวเพื่อ Capture เฟรม
-            const offscreenCanvas = document.createElement('canvas');
-            offscreenCanvas.width = vSource.videoWidth;
-            offscreenCanvas.height = vSource.videoHeight;
-            const offCtx = offscreenCanvas.getContext('2d');
-            offCtx.drawImage(vSource, 0, 0);
-            
-            offscreenCanvas.toBlob(async (blob) => {
+            // วาดลง Canvas ลับเพื่อส่ง
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = vSource.videoWidth;
+            tempCanvas.height = vSource.videoHeight;
+            tempCanvas.getContext('2d').drawImage(vSource, 0, 0);
+
+            tempCanvas.toBlob(async (blob) => {
                 if (!blob || !isAIRunning) return;
-                
+
                 const fd = new FormData();
                 fd.append('image', blob, 'frame.jpg');
                 fd.append('px_threshold', document.getElementById('pxThreshold').value);
@@ -230,68 +183,38 @@
                     if (data.success && isAIRunning) {
                         const img = new Image();
                         img.onload = () => {
-                            // 2. วาดภาพที่ได้จาก AI (ที่มีกรอบและ Segment) ลงแคนวาสจริง
                             ctx.clearRect(0, 0, vCanvas.width, vCanvas.height);
                             ctx.drawImage(img, 0, 0, vCanvas.width, vCanvas.height);
-                            
                             updateStatus(data.status, data.pixel_count);
-                            
-                            // วนลูปต่อเนื่อง
                             requestAnimationFrame(renderLoop);
                         };
                         img.src = "data:image/jpeg;base64," + data.image;
                     }
                 } catch (e) { 
-                    console.error("Fetch Error:", e);
                     if(isAIRunning) setTimeout(renderLoop, 100); 
                 }
-            }, 'image/jpeg', 0.7);
+            }, 'image/jpeg', 0.6);
         }
 
         function updateStatus(s, px) {
             const el = document.getElementById('vStatus');
             if (s === "MISSING") {
-                el.innerText = `🚨 ตรวจพบความผิดปกติ: ${px} Pixels`;
-                el.className = "text-center py-5 rounded-2xl text-xl font-bold bg-red-600 text-white shadow-xl animate-pulse";
+                el.innerText = `🚨 ตรวจพบ: ${px} PX`;
+                el.className = "text-center py-5 rounded-2xl text-xl font-bold bg-red-600 text-white animate-pulse";
             } else {
-                el.innerText = "✅ สถานะปกติ (GOOD)";
-                el.className = "text-center py-5 rounded-2xl text-xl font-bold bg-green-500 text-white shadow-md";
+                el.innerText = "✅ สถานะ: ปกติ";
+                el.className = "text-center py-5 rounded-2xl text-xl font-bold bg-green-500 text-white";
             }
         }
 
-        // ระบบ Image (ยังคงไว้เหมือนเดิม)
-        document.getElementById('imageInput').onchange = async (e) => {
-            for (let file of e.target.files) {
-                const id = 'img-' + Math.random().toString(36).substr(2, 5);
-                const originalUrl = URL.createObjectURL(file);
-                
-                const cardHtml = `
-                    <div id="card-${id}" class="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden mb-4 p-4">
-                        <div class="flex justify-between items-center border-b pb-2 mb-4">
-                            <span class="font-bold text-slate-700">${file.name}</span>
-                            <button onclick="document.getElementById('card-${id}').remove()" class="text-red-500 text-xs">ลบ</button>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <img src="${originalUrl}" class="rounded-xl border">
-                            <img id="${id}" class="rounded-xl border bg-slate-50 min-h-[150px]">
-                        </div>
-                    </div>`;
-                document.getElementById('imageResultsList').insertAdjacentHTML('afterbegin', cardHtml);
-
-                const fd = new FormData();
-                fd.append('image', file);
-                fd.append('px_threshold', document.getElementById('pxThreshold').value);
-                fd.append('conf_threshold', document.getElementById('inpConfidence').value);
-
-                try {
-                    const res = await fetch(API_URL, { method: 'POST', body: fd });
-                    const data = await res.json();
-                    document.getElementById(id).src = "data:image/jpeg;base64," + data.image;
-                    inspectionData.push({ time: new Date().toLocaleTimeString(), file: file.name, status: data.status, px: data.pixel_count });
-                    document.getElementById('logCount').innerText = `บันทึกแล้ว: ${inspectionData.length} รายการ`;
-                } catch (error) { addLog("❌ วิเคราะห์ภาพผิดพลาด"); }
-            }
-        };
+        function stopAll() {
+            isAIRunning = false;
+            isCameraOpen = false;
+            if (vSource.srcObject) vSource.srcObject.getTracks().forEach(t => t.stop());
+            vSource.srcObject = null;
+            vSource.src = "";
+            addLog("⏹️ เคลียร์ระบบ");
+        }
 
         function setMode(m) {
             document.getElementById('imageSection').classList.toggle('hidden', m !== 'image');
@@ -299,20 +222,6 @@
             document.getElementById('btnImage').classList.toggle('active-mode', m === 'image');
             document.getElementById('btnVideo').classList.toggle('active-mode', m === 'video');
         }
-
-        function exportToCSV() {
-            if (inspectionData.length === 0) return alert("ไม่มีข้อมูล");
-            let csv = "Time,Source,Status,Pixels\n" + inspectionData.map(r => `${r.time},${r.file || 'Live'},${r.status},${r.px}`).join("\n");
-            const blob = new Blob([csv], { type: 'text/csv' });
-            window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = "inspection_report.csv";
-            a.click();
-        }
     </script>
 </body>
 </html>
-
-
-
