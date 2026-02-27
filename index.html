@@ -174,29 +174,43 @@
 
         async function renderLoop() {
             if (!isAIRunning || vSource.paused || vSource.ended) return;
+
+            // 1. วาดเฟรมปัจจุบันลงบน Canvas ลับๆ เพื่อเตรียมส่ง
             ctx.drawImage(vSource, 0, 0, vCanvas.width, vCanvas.height);
+            
             vCanvas.toBlob(async (blob) => {
                 if (!blob || !isAIRunning) return;
+                
                 const fd = new FormData();
-                fd.append('image', blob, 'f.jpg');
-                // แก้ชื่อ key ให้ตรงกับ app.py (conf_threshold)
+                fd.append('image', blob, 'frame.jpg');
                 fd.append('px_threshold', document.getElementById('pxThreshold').value);
                 fd.append('conf_threshold', document.getElementById('inpConfidence').value);
 
                 try {
                     const res = await fetch(API_URL, { method: 'POST', body: fd });
                     const data = await res.json();
+                    
                     if (data.success && isAIRunning) {
                         const img = new Image();
                         img.onload = () => {
+                            // --- จุดสำคัญ: เคลียร์ Canvas เก่าแล้ววาดภาพ "ผลลัพธ์" จาก AI ทับลงไป ---
+                            ctx.clearRect(0, 0, vCanvas.width, vCanvas.height);
                             ctx.drawImage(img, 0, 0, vCanvas.width, vCanvas.height);
+                            
+                            // อัปเดตสถานะตัวอักษรด้านบน
                             updateStatus(data.status, data.pixel_count);
+                            
+                            // วนลูปทำงานต่อไป
                             requestAnimationFrame(renderLoop);
                         };
+                        // ดึงภาพที่ AI วาด Segment/BBox มาจาก Backend
                         img.src = "data:image/jpeg;base64," + data.image;
                     }
-                } catch (e) { if(isAIRunning) setTimeout(renderLoop, 200); }
-            }, 'image/jpeg', 0.5);
+                } catch (e) { 
+                    console.error("AI Error:", e);
+                    if(isAIRunning) setTimeout(renderLoop, 200); 
+                }
+            }, 'image/jpeg', 0.5); // ใช้คุณภาพ 0.5 เพื่อลดความหน่วง (Latency)
         }
 
         function updateStatus(s, px) {
@@ -274,3 +288,4 @@
     </script>
 </body>
 </html>
+
