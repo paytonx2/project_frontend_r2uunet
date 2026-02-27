@@ -152,28 +152,39 @@
         };
 
         async function startAI() {
-            if (!vSource.src) return alert("เลือกวิดีโอก่อนครับ");
-            addLog("🎥 เริ่มประมวลผลวิดีโอ...");
-            await vSource.play();
-            processFrame();
+            if (!vSource.src) return alert("กรุณาเลือกวิดีโอก่อนครับ");
+            
+            addLog("🎥 กำลังสั่งให้วิดีโอเริ่มเล่น...");
+            
+            try {
+                // บังคับให้วิดีโอต้นฉบับเล่น
+                await vSource.play(); 
+                
+                // ตรวจสอบว่าวิดีโอมีขนาดกว้างยาวเท่าไหร่ แล้วตั้งค่า Canvas ให้ตรงกัน
+                vCanvas.width = vSource.videoWidth;
+                vCanvas.height = vSource.videoHeight;
+                
+                addLog("🚀 เริ่มประมวลผลเฟรมภาพแบบ Real-time...");
+                processFrame();
+            } catch (err) {
+                addLog("❌ Error: วิดีโอเล่นไม่ได้ (เช็คว่าไฟล์เสียหรือไม่)");
+                console.error(err);
+            }
         }
 
         async function processFrame() {
+            // ถ้าวิดีโอหยุด หรือจบ ให้เลิกทำ
             if (vSource.paused || vSource.ended) return;
 
-            // 1. ตั้งขนาด Canvas ให้เท่ากับวิดีโอที่กำลังเล่นอยู่จริง
-            if (vCanvas.width !== vSource.videoWidth) {
-                vCanvas.width = vSource.videoWidth;
-                vCanvas.height = vSource.videoHeight;
-            }
-
-            // 2. วาดภาพปัจจุบันจากวิดีโอลง Canvas ก่อน (เพื่อให้เห็นภาพเคลื่อนไหว)
+            // 1. วาดภาพปัจจุบันจากวิดีโอลงไปในช่อง Canvas ฝั่งขวาทันที (เพื่อให้เห็นว่าระบบทำงาน)
             ctx.drawImage(vSource, 0, 0, vCanvas.width, vCanvas.height);
 
-            // 3. ส่งภาพไปให้ AI ในเครื่องประมวลผล
+            // 2. ส่งเฟรมนี้ไปให้ AI ในเครื่องประมวลผล
             vCanvas.toBlob(async (blob) => {
+                if (!blob) return;
+                
                 const fd = new FormData();
-                fd.append('image', blob, 'f.jpg');
+                fd.append('image', blob, 'frame.jpg');
                 fd.append('conf_threshold', confSli.value);
                 fd.append('px_threshold', pxInp.value);
 
@@ -184,21 +195,23 @@
                     if (data.success && data.image) {
                         const img = new Image();
                         img.onload = () => {
-                            // 4. เมื่อ AI ส่งภาพที่มี Mask/กรอบ กลับมา ให้วาดทับลงไปทันที
+                            // 3. เมื่อ AI ส่งภาพที่มีกรอบสี/สีแดงกลับมา ให้วาดทับลงบน Canvas เดิม
                             ctx.clearRect(0, 0, vCanvas.width, vCanvas.height);
                             ctx.drawImage(img, 0, 0, vCanvas.width, vCanvas.height);
+                            
+                            // อัปเดตแถบสีสถานะ
                             updateVStatus(data.status);
                             
-                            // 5. เรียกเฟรมถัดไปทันที (Real-time Sync)
+                            // 4. วนลูปเรียกเฟรมถัดไป
                             requestAnimationFrame(processFrame);
                         };
                         img.src = "data:image/jpeg;base64," + data.image;
                     }
                 } catch (e) {
-                    // ถ้า Error (เช่นเน็ตกระตุก) ให้รอ 0.1 วินาทีแล้วเริ่มใหม่
-                    setTimeout(processFrame, 100);
+                    // ถ้าหลุด ให้รอครึ่งวินาทีแล้วลองใหม่
+                    setTimeout(processFrame, 500);
                 }
-            }, 'image/jpeg', 0.4); // ลดคุณภาพเหลือ 0.4 เพื่อความเร็วในการส่งข้อมูลผ่าน ngrok
+            }, 'image/jpeg', 0.4); 
         }
 
         function updateVStatus(s) {
@@ -209,4 +222,5 @@
     </script>
 </body>
 </html>
+
 
