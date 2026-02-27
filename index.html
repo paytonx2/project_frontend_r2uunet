@@ -3,22 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R2U-Net Pro Dashboard</title>
+    <title>R2U-Net Debug Version</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .status-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-        #vCanvas { background-color: #000; width: 100%; height: auto; border-radius: 1rem; }
+        #vCanvas { background-color: #000; width: 100%; height: auto; border-radius: 1rem; border: 2px solid #3b82f6; }
+        .log-box { font-family: monospace; font-size: 10px; height: 100px; overflow-y: auto; background: #000; color: #0f0; p: 10px; border-radius: 5px; }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen flex flex-col md:flex-row">
 
     <div class="w-full md:w-80 bg-slate-900 text-white p-6 shadow-xl flex-shrink-0">
-        <h2 class="text-2xl font-bold mb-6 text-blue-400 border-b border-slate-700 pb-2">⚙️ Control Panel</h2>
+        <h2 class="text-2xl font-bold mb-6 text-blue-400">⚙️ Control Panel</h2>
         
         <div class="mb-6">
             <label class="block text-sm mb-2 text-slate-400">Pixel Threshold</label>
-            <input type="number" id="pxThreshold" value="15" class="w-full bg-slate-800 p-2 rounded border border-slate-600 outline-none">
+            <input type="number" id="pxThreshold" value="15" class="w-full bg-slate-800 p-2 rounded border border-slate-600 outline-none text-white">
         </div>
 
         <div class="mb-6">
@@ -26,135 +25,132 @@
             <input type="range" id="confThreshold" min="0.1" max="0.95" step="0.05" value="0.35" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
         </div>
 
-        <div class="p-4 bg-slate-800 rounded-lg mb-4 text-xs">
-            <p id="thresholdInfo">เกณฑ์: >= 15 px = <span class="text-red-400 font-bold">MISSING</span></p>
-            <p id="debugLog" class="mt-2 text-slate-500 italic">Log: Ready</p>
+        <div class="mb-4">
+            <p class="text-xs uppercase text-slate-500 font-bold mb-2">System Logs</p>
+            <div id="systemLog" class="log-box p-2">Ready to work...</div>
         </div>
 
-        <button onclick="location.reload()" class="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded font-bold transition">รีเฟรชระบบ</button>
+        <button onclick="window.location.reload()" class="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded font-bold transition">RELOAD SYSTEM</button>
     </div>
 
-    <div class="flex-1 p-4 md:p-8 overflow-y-auto">
+    <div class="flex-1 p-4 md:p-8">
         <header class="mb-6">
-            <h1 class="text-3xl font-black text-slate-800 uppercase tracking-tight">R2U-Net Defect Detection</h1>
-            <p class="text-slate-500">Auto-Detection System | ภูวรินทร์ & พรรณกร</p>
+            <h1 class="text-3xl font-black text-slate-800 uppercase">R2U-Net Inspection</h1>
+            <p class="text-slate-500">Mode: <span id="currentModeDisplay">Image Analysis</span></p>
         </header>
 
         <div class="flex gap-4 mb-6">
-            <button onclick="setMode('image')" id="btnImage" class="px-6 py-2 rounded-lg font-bold bg-blue-600 text-white">📷 ภาพนิ่ง (Multiple)</button>
+            <button onclick="setMode('image')" id="btnImage" class="px-6 py-2 rounded-lg font-bold bg-blue-600 text-white shadow-lg">📷 ภาพนิ่ง</button>
             <button onclick="setMode('video')" id="btnVideo" class="px-6 py-2 rounded-lg font-bold bg-slate-200 text-slate-600">🎥 วิดีโอ</button>
         </div>
 
         <div id="imageSection" class="space-y-4">
-            <div class="bg-white p-10 rounded-2xl border-4 border-dashed border-slate-200 text-center cursor-pointer hover:bg-slate-50" onclick="document.getElementById('imageInput').click()">
+            <div class="bg-white p-8 rounded-2xl border-4 border-dashed border-slate-200 text-center cursor-pointer" onclick="document.getElementById('imageInput').click()">
                 <input type="file" id="imageInput" accept="image/*" multiple class="hidden">
-                <p class="text-slate-500 font-bold">คลิกเพื่ออัปโหลดหลายรูปภาพ</p>
+                <p class="text-slate-500 font-bold">คลิกเพื่ออัปโหลดรูปภาพ (Multiple)</p>
             </div>
-            <div id="imageResultsList" class="space-y-4"></div>
+            <div id="imageResultsList" class="grid grid-cols-1 gap-4"></div>
         </div>
 
         <div id="videoSection" class="hidden space-y-4">
-            <input type="file" id="videoInput" accept="video/*" class="w-full p-4 bg-white rounded-xl border border-slate-200">
-            <div id="vStatus" class="text-center py-4 rounded-xl text-xl font-black shadow-inner bg-slate-200 text-slate-500">UPLOAD VIDEO TO START</div>
-            
+            <input type="file" id="videoInput" accept="video/*" class="w-full p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div id="vStatus" class="text-center py-4 rounded-xl text-xl font-black bg-slate-200 text-slate-500">NO VIDEO LOADED</div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div class="space-y-2">
-                    <p class="text-xs font-bold text-slate-400 uppercase">Original Video</p>
-                    <video id="vSource" controls class="w-full rounded-2xl bg-black shadow-lg"></video>
-                </div>
-                <div class="space-y-2">
-                    <p class="text-xs font-bold text-blue-500 uppercase">AI Processing View</p>
-                    <canvas id="vCanvas"></canvas>
-                </div>
+                <video id="vSource" controls class="w-full rounded-2xl bg-black shadow-lg"></video>
+                <canvas id="vCanvas"></canvas>
             </div>
         </div>
     </div>
 
     <script>
-        // *** ตรวจสอบลิงก์นี้ให้ถูกต้อง ***
+        // 1. ตรวจสอบ API URL ให้ชัวร์ว่าลงท้ายด้วย /predict
         const API_URL = "https://phuwarin-my-cnn-api.hf.space/predict"; 
         
-        const pxInp = document.getElementById('pxThreshold');
-        const confSli = document.getElementById('confThreshold');
+        const systemLog = document.getElementById('systemLog');
         const vSource = document.getElementById('vSource');
         const vCanvas = document.getElementById('vCanvas');
-        const ctx = vCanvas.getContext('2d');
-        const debugLog = document.getElementById('debugLog');
-        let isProcessing = false;
+        const ctx = vCanvas.getContext('2d', { willReadFrequently: true });
 
-        confSli.oninput = () => document.getElementById('confVal').innerText = confSli.value;
-        pxInp.onchange = () => document.getElementById('thresholdInfo').innerHTML = `เกณฑ์: >= ${pxInp.value} px = <span class="text-red-400 font-bold">MISSING</span>`;
+        function addLog(msg) {
+            const time = new Date().toLocaleTimeString();
+            systemLog.innerHTML += `<div>[${time}] ${msg}</div>`;
+            systemLog.scrollTop = systemLog.scrollHeight;
+            console.log(msg);
+        }
 
+        // 2. สลับโหมด
         function setMode(m) {
+            addLog("Switching to " + m + " mode");
             document.getElementById('imageSection').classList.toggle('hidden', m !== 'image');
             document.getElementById('videoSection').classList.toggle('hidden', m !== 'video');
-            document.getElementById('btnImage').className = m === 'image' ? 'px-6 py-2 rounded-lg font-bold bg-blue-600 text-white' : 'px-6 py-2 rounded-lg font-bold bg-slate-200 text-slate-600';
-            document.getElementById('btnVideo').className = m === 'video' ? 'px-6 py-2 rounded-lg font-bold bg-blue-600 text-white' : 'px-6 py-2 rounded-lg font-bold bg-slate-200 text-slate-600';
+            document.getElementById('currentModeDisplay').innerText = m === 'image' ? 'Image Analysis' : 'Video Real-time Analysis';
+            document.getElementById('btnImage').className = m === 'image' ? 'px-6 py-2 rounded-lg font-bold bg-blue-600 text-white shadow-lg' : 'px-6 py-2 rounded-lg font-bold bg-slate-200 text-slate-600';
+            document.getElementById('btnVideo').className = m === 'video' ? 'px-6 py-2 rounded-lg font-bold bg-blue-600 text-white shadow-lg' : 'px-6 py-2 rounded-lg font-bold bg-slate-200 text-slate-600';
             if(m === 'image') vSource.pause();
         }
 
-        // IMAGE LOGIC (Multiple)
-        document.getElementById('imageInput').onchange = async (e) => {
-            for (let file of e.target.files) {
-                const id = 'id-' + Math.random().toString(36).substr(2, 9);
+        // 3. IMAGE LOGIC
+        document.getElementById('imageInput').addEventListener('change', async (e) => {
+            const files = e.target.files;
+            addLog(`Selected ${files.length} images`);
+            
+            for (let file of files) {
+                const id = 'img-' + Math.random().toString(36).substr(2, 9);
                 document.getElementById('imageResultsList').insertAdjacentHTML('afterbegin', `
-                    <div id="${id}" class="bg-white p-4 rounded-xl shadow flex gap-4 animate-pulse">
-                        <img src="${URL.createObjectURL(file)}" class="w-32 h-32 object-cover rounded-lg">
-                        <div class="flex-1"><p class="font-bold">${file.name}</p><p class="text-blue-500 text-sm">Processing...</p></div>
-                        <img id="res-${id}" class="w-32 h-32 object-cover rounded-lg hidden border-2 border-blue-500">
+                    <div id="${id}" class="bg-white p-4 rounded-xl shadow-md border flex gap-4 items-center">
+                        <img src="${URL.createObjectURL(file)}" class="w-24 h-24 object-cover rounded shadow">
+                        <div class="flex-1 font-bold text-slate-700">${file.name}</div>
+                        <div id="status-${id}" class="text-blue-500 animate-pulse">Analyzing...</div>
+                        <img id="resImg-${id}" class="w-24 h-24 object-cover rounded border-2 border-blue-500 hidden">
                     </div>
                 `);
 
                 const fd = new FormData();
                 fd.append('image', file);
-                fd.append('conf_threshold', confSli.value);
-                fd.append('px_threshold', pxInp.value);
+                fd.append('conf_threshold', document.getElementById('confThreshold').value);
+                fd.append('px_threshold', document.getElementById('pxThreshold').value);
 
                 try {
+                    addLog(`API Call for ${file.name}...`);
                     const res = await fetch(API_URL, { method: 'POST', body: fd });
                     const data = await res.json();
-                    const el = document.getElementById(id);
-                    el.classList.remove('animate-pulse');
-                    const resImg = document.getElementById('res-'+id);
-                    resImg.src = "data:image/jpeg;base64," + data.image;
-                    resImg.classList.remove('hidden');
-                    el.querySelector('.text-blue-500').innerText = data.status;
-                    el.querySelector('.text-blue-500').className = data.status === "MISSING" ? "text-red-600 font-bold" : "text-green-600 font-bold";
-                } catch(err) { console.error(err); }
+                    
+                    addLog(`Result for ${file.name}: ${data.status}`);
+                    document.getElementById('resImg-'+id).src = "data:image/jpeg;base64," + data.image;
+                    document.getElementById('resImg-'+id).classList.remove('hidden');
+                    document.getElementById('status-'+id).innerText = data.status;
+                    document.getElementById('status-'+id).classList.remove('animate-pulse');
+                    document.getElementById('status-'+id).className = data.status === "MISSING" ? "text-red-600 font-black" : "text-green-600 font-black";
+                } catch(err) {
+                    addLog("API Error: " + err.message);
+                }
             }
-        };
+        });
 
-        // VIDEO LOGIC (The Fixed Part)
-        document.getElementById('videoInput').onchange = (e) => {
+        // 4. VIDEO LOGIC
+        document.getElementById('videoInput').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
+                addLog("Video file selected: " + file.name);
                 vSource.src = URL.createObjectURL(file);
-                debugLog.innerText = "Log: Video Loaded";
-                document.getElementById('vStatus').innerText = "PRESS PLAY TO ANALYZE";
+                document.getElementById('vStatus').innerText = "READY: PRESS PLAY";
             }
-        };
+        });
 
-        async function startAnalysis() {
+        async function analyzeFrame() {
             if (vSource.paused || vSource.ended) return;
 
-            // กำหนดขนาด Canvas ให้เท่ากับวิดีโอ
-            if (vCanvas.width !== vSource.videoWidth) {
-                vCanvas.width = vSource.videoWidth;
-                vCanvas.height = vSource.videoHeight;
-            }
-
-            // วาดเฟรมปัจจุบัน
+            vCanvas.width = vSource.videoWidth;
+            vCanvas.height = vSource.videoHeight;
             ctx.drawImage(vSource, 0, 0, vCanvas.width, vCanvas.height);
 
-            // ส่ง API
             vCanvas.toBlob(async (blob) => {
                 const fd = new FormData();
-                fd.append('image', blob, 'frame.jpg');
-                fd.append('conf_threshold', confSli.value);
-                fd.append('px_threshold', pxInp.value);
+                fd.append('image', blob, 'f.jpg');
+                fd.append('conf_threshold', document.getElementById('confThreshold').value);
+                fd.append('px_threshold', document.getElementById('pxThreshold').value);
 
                 try {
-                    debugLog.innerText = "Log: AI Analyzing...";
                     const res = await fetch(API_URL, { method: 'POST', body: fd });
                     const data = await res.json();
                     
@@ -163,29 +159,27 @@
                         img.onload = () => {
                             ctx.drawImage(img, 0, 0, vCanvas.width, vCanvas.height);
                             updateVStatus(data.status);
-                            debugLog.innerText = "Log: Done";
-                            // ทำเฟรมต่อไป
-                            requestAnimationFrame(startAnalysis);
+                            requestAnimationFrame(analyzeFrame);
                         };
                         img.src = "data:image/jpeg;base64," + data.image;
                     }
                 } catch (e) {
-                    debugLog.innerText = "Log: API Error";
-                    setTimeout(startAnalysis, 500); // รอครึ่งวิแล้วลองใหม่
+                    addLog("Video frame error");
+                    setTimeout(analyzeFrame, 1000);
                 }
-            }, 'image/jpeg', 0.5);
+            }, 'image/jpeg', 0.4);
         }
 
         function updateVStatus(s) {
             const el = document.getElementById('vStatus');
             el.innerText = s === "MISSING" ? "🚨 DEFECT DETECTED" : "✅ SYSTEM NORMAL";
-            el.className = `text-center py-4 rounded-xl text-xl font-black shadow-inner ${s === 'MISSING' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`;
+            el.className = `text-center py-4 rounded-xl text-xl font-black ${s === 'MISSING' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`;
         }
 
-        vSource.addEventListener('play', () => {
-            debugLog.innerText = "Log: Playback started";
-            startAnalysis();
-        });
+        vSource.onplay = () => {
+            addLog("Video started");
+            analyzeFrame();
+        };
     </script>
 </body>
 </html>
