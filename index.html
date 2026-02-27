@@ -3,93 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R2U-NET INSPECTION PRO</title>
+    <title>R2U-NET INSPECTION PRO - OFFICIAL FINAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700&display=swap');
-        body { font-family: 'Kanit', sans-serif; background: #f0f2f5; }
-        .log-box { font-family: monospace; font-size: 11px; height: 120px; overflow-y: auto; background: #1a1a1a; color: #00ff00; padding: 12px; border-radius: 12px; }
-        video, canvas { background: #000; width: 100%; min-height: 300px; border-radius: 16px; border: 2px solid #334155; display: block; }
-        .active-mode { background-color: #2563eb !important; color: white !important; }
-        .img-label { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #60a5fa; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; z-index: 20; }
-        .result-card { transition: all 0.3s ease; }
+        body { font-family: 'Kanit', sans-serif; background: #f0f2f5; color: #1e293b; }
+        .log-box { font-family: monospace; font-size: 11px; height: 120px; overflow-y: auto; background: #1a1a1a; color: #00ff00; padding: 12px; border-radius: 12px; border: 1px solid #334155; }
+        video, canvas { background: #000; width: 100%; min-height: 320px; border-radius: 20px; border: 2px solid #334155; display: block; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .active-mode { background-color: #2563eb !important; color: white !important; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .img-label { position: absolute; top: 12px; left: 12px; background: rgba(15, 23, 42, 0.8); color: #60a5fa; padding: 4px 12px; border-radius: 8px; font-size: 10px; font-weight: bold; z-index: 10; letter-spacing: 0.05em; }
+        .result-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        input[type="range"] { width: 100%; height: 6px; background: #334155; border-radius: 5px; appearance: none; }
+        input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; background: #3b82f6; border-radius: 50%; cursor: pointer; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col md:flex-row">
 
-    <div class="w-full md:w-80 bg-slate-900 text-white p-6 flex-shrink-0 shadow-2xl overflow-y-auto">
-        <h2 class="text-2xl font-bold mb-6 text-blue-400">⚙️ แผงควบคุม</h2>
-        <div class="space-y-6">
+    <aside class="w-full md:w-80 bg-slate-900 text-white p-6 flex-shrink-0 shadow-2xl flex flex-col gap-6 overflow-y-auto">
+        <div>
+            <h2 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
+                <span>⚙️</span> Control Panel
+            </h2>
+            <p class="text-slate-500 text-xs mt-1 font-light">R2U-NET Segmentation System</p>
+        </div>
+        
+        <div class="space-y-5">
             <div>
-                <label class="block text-sm text-slate-400 mb-2">Pixel Threshold</label>
-                <input type="number" id="pxThreshold" value="15" class="w-full bg-slate-800 p-3 rounded-xl border border-slate-700 outline-none text-blue-400 font-bold">
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Pixel Threshold</label>
+                <input type="number" id="pxThreshold" value="15" class="w-full bg-slate-800 p-3 rounded-xl border border-slate-700 outline-none text-blue-400 font-bold focus:border-blue-500 transition-all">
             </div>
+
             <div>
                 <div class="flex justify-between mb-2">
-                    <label class="text-sm text-slate-400">Confidence</label>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Confidence</label>
                     <span id="valConfidence" class="text-blue-400 font-bold">0.35</span>
                 </div>
                 <input type="range" id="inpConfidence" min="0.10" max="0.95" step="0.05" value="0.35" 
                     oninput="document.getElementById('valConfidence').innerText = parseFloat(this.value).toFixed(2)">
             </div>
-            
+
             <hr class="border-slate-800">
-            
-            <div class="p-4 bg-slate-800 rounded-2xl border border-slate-700 text-center">
-                <button onclick="exportToCSV()" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all shadow-lg mb-2">📊 Download CSV</button>
-                <p id="logCount" class="text-[10px] text-slate-500">บันทึกสะสม: 0 รายการ</p>
+
+            <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+                <button onclick="exportToCSV()" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all shadow-lg active:scale-95">
+                    📊 Download CSV Report
+                </button>
+                <div class="flex justify-between mt-3 px-1 text-[10px] text-slate-500">
+                    <span>Logs Captured:</span>
+                    <span id="logCount" class="text-blue-400 font-bold">0 Items</span>
+                </div>
             </div>
 
-            <div id="systemLog" class="log-box text-xs">ระบบพร้อม...</div>
-            <button onclick="location.reload()" class="w-full py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl font-bold border border-slate-700 mt-4">🔄 รีเซ็ตระบบ</button>
-        </div>
-    </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">System Terminal</p>
+                <div id="systemLog" class="log-box">ระบบพร้อมใช้งาน...</div>
+            </div>
 
-    <div class="flex-1 p-6 md:p-10 overflow-y-auto">
-        <header class="mb-8 flex justify-between items-center border-b pb-8">
-            <h1 class="text-4xl font-extrabold text-slate-800">R2U-NET <span class="text-blue-600">PRO</span></h1>
-            <div class="flex gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
-                <button onclick="setMode('image')" id="btnImage" class="px-6 py-2.5 rounded-xl font-bold transition-all text-slate-500">📷 รูปภาพ</button>
-                <button onclick="setMode('video')" id="btnVideo" class="px-6 py-2.5 rounded-xl font-bold transition-all active-mode text-white">🎥 วิดีโอ/กล้องสด</button>
+            <button onclick="location.reload()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold border border-slate-700 text-slate-400 text-sm transition-all">
+                🔄 Reset Application
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-6 md:p-10 flex flex-col overflow-y-auto">
+        <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-8">
+            <div>
+                <h1 class="text-4xl font-black text-slate-800 tracking-tight italic">R2U-NET <span class="text-blue-600">PRO</span></h1>
+                <p class="text-slate-500 font-medium">Deep Learning Defect Detection Platform</p>
+            </div>
+            <div class="flex gap-2 bg-slate-200 p-1 rounded-2xl shadow-inner border border-slate-300">
+                <button onclick="setMode('image')" id="btnImage" class="px-8 py-2.5 rounded-xl font-bold transition-all text-slate-500">📷 Images</button>
+                <button onclick="setMode('video')" id="btnVideo" class="px-8 py-2.5 rounded-xl font-bold transition-all active-mode text-white">🎥 Live Video</button>
             </div>
         </header>
 
-        <div id="videoSection" class="space-y-6">
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <section id="videoSection" class="space-y-6 animate-in fade-in duration-500">
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                    <p class="text-xs font-bold text-slate-400 uppercase mb-2">1. เลือกไฟล์วิดีโอ</p>
-                    <input type="file" id="videoInput" accept="video/*" class="w-full text-sm" onchange="handleVideoUpload(this)">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Input Source</label>
+                    <input type="file" id="videoInput" accept="video/*" class="w-full text-sm file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer" onchange="handleVideoUpload(this)">
                 </div>
-                <div class="flex items-end gap-2">
-                    <button id="camBtn" onclick="toggleCamera()" class="flex-1 py-3 bg-slate-800 text-white font-bold rounded-xl">📹 เปิดกล้อง</button>
-                    <button id="runBtn" onclick="toggleAI()" disabled class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl opacity-50">▶️ เริ่มรัน AI</button>
+                <div class="flex items-end gap-3">
+                    <button id="camBtn" onclick="toggleCamera()" class="flex-1 py-3 bg-slate-800 text-white font-bold rounded-2xl hover:bg-slate-900 transition-all active:scale-95 shadow-md">📹 Open Camera</button>
+                    <button id="runBtn" onclick="toggleAI()" disabled class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-2xl opacity-50 cursor-not-allowed transition-all active:scale-95 shadow-lg">▶️ Run AI Analysis</button>
                 </div>
             </div>
 
-            <div id="vStatus" class="text-center py-5 rounded-2xl text-xl font-bold bg-slate-100 text-slate-400 border border-slate-200">
-                รอนำเข้าวิดีโอ...
+            <div id="vStatus" class="text-center py-6 rounded-3xl text-xl font-black bg-slate-100 text-slate-400 border-2 border-dashed border-slate-200 uppercase tracking-tighter transition-all duration-300">
+                Waiting for Media Input...
             </div>
 
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                <div class="relative">
-                    <span class="img-label">SOURCE</span>
+                <div class="relative group">
+                    <span class="img-label">SOURCE FEED</span>
                     <video id="vSource" controls muted playsinline loop crossorigin="anonymous"></video>
                 </div>
-                <div class="relative">
+                <div class="relative group">
                     <span class="img-label">AI PREDICTION</span>
                     <canvas id="vCanvas"></canvas>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div id="imageSection" class="hidden space-y-6">
-            <div onclick="document.getElementById('imageInput').click()" class="bg-white p-12 rounded-[2rem] border-4 border-dashed border-slate-200 text-center cursor-pointer shadow-sm hover:border-blue-400 transition-all">
+        <section id="imageSection" class="hidden space-y-6">
+            <div onclick="document.getElementById('imageInput').click()" class="group bg-white p-12 rounded-[3rem] border-4 border-dashed border-slate-200 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all shadow-sm">
                 <input type="file" id="imageInput" accept="image/*" multiple class="hidden" onchange="handleImageUpload(this)">
-                <p class="text-slate-600 font-bold text-xl">📤 คลิกเพื่ออัปโหลดรูปภาพ (หลายไฟล์ได้)</p>
+                <div class="text-5xl mb-4">📤</div>
+                <p class="text-slate-600 font-black text-2xl group-hover:text-blue-600 transition-colors">Click to Upload Batch Images</p>
+                <p class="text-slate-400 mt-2 font-medium">Supports JPG, PNG (Max 30MB per file)</p>
             </div>
-            <div id="imageResultsList" class="flex flex-col gap-6"></div>
-        </div>
-    </div>
+            
+            <div id="imageResultsList" class="space-y-4">
+                </div>
+        </section>
+    </main>
 
     <script>
         const API_URL = "https://phuwarin-my-cnn-api.hf.space/predict"; 
@@ -100,43 +127,48 @@
         
         let isAIRunning = false;
         let isCameraOpen = false;
-        let inspectionData = []; // สำหรับเก็บข้อมูล CSV
+        let inspectionData = [];
 
         function addLog(msg) {
             systemLog.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
             systemLog.scrollTop = systemLog.scrollHeight;
         }
 
-        // --- ระบบ Video ---
+        // --- Video Core ---
         function handleVideoUpload(input) {
             const file = input.files[0];
             if (!file) return;
-            addLog("⏳ กำลังเตรียมวิดีโอ: " + file.name);
+            addLog("⏳ Loading Video: " + file.name);
+            
             if (vSource.src) URL.revokeObjectURL(vSource.src);
             if (isCameraOpen) stopAll();
+
             vSource.src = URL.createObjectURL(file);
             vSource.load();
             vSource.onloadedmetadata = () => {
-                addLog("✅ วิดีโอพร้อมแล้ว");
+                addLog("✅ Video Loaded Successfully");
                 vCanvas.width = vSource.videoWidth;
                 vCanvas.height = vSource.videoHeight;
                 document.getElementById('runBtn').disabled = false;
-                document.getElementById('runBtn').classList.remove('opacity-50');
-                document.getElementById('vStatus').innerText = "พร้อมแล้ว | กดเริ่มรัน AI";
+                document.getElementById('runBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+                document.getElementById('vStatus').innerText = "Media Ready - Press Run AI";
+                document.getElementById('vStatus').className = "text-center py-6 rounded-3xl text-xl font-black bg-blue-50 text-blue-500 border-2 border-blue-100 uppercase tracking-tighter";
             };
         }
 
         async function toggleCamera() {
             if (!isCameraOpen) {
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
                     vSource.srcObject = stream;
                     vSource.play();
                     isCameraOpen = true;
                     document.getElementById('runBtn').disabled = false;
-                    document.getElementById('runBtn').classList.remove('opacity-50');
-                    addLog("📸 เปิดกล้องสำเร็จ");
-                } catch (e) { addLog("❌ กล้องขัดข้อง"); }
+                    document.getElementById('runBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+                    document.getElementById('camBtn').innerText = "🚫 Close Camera";
+                    document.getElementById('camBtn').classList.replace('bg-slate-800', 'bg-red-500');
+                    addLog("📸 Camera Stream Active");
+                } catch (e) { addLog("❌ Camera Access Denied"); }
             } else { stopAll(); }
         }
 
@@ -144,24 +176,26 @@
             isAIRunning = !isAIRunning;
             const btn = document.getElementById('runBtn');
             if (isAIRunning) {
-                btn.innerText = "⏸️ หยุด AI";
-                btn.classList.replace('bg-blue-600', 'bg-red-500');
-                addLog("🚀 AI เริ่มวิเคราะห์...");
+                btn.innerText = "⏸️ Stop AI Analysis";
+                btn.classList.replace('bg-blue-600', 'bg-rose-500');
+                addLog("🚀 Inference Loop Started");
                 vSource.play();
                 renderLoop();
             } else {
-                btn.innerText = "▶️ เริ่มรัน AI";
-                btn.classList.replace('bg-red-500', 'bg-blue-600');
-                addLog("⏸️ AI หยุดชั่วคราว");
+                btn.innerText = "▶️ Run AI Analysis";
+                btn.classList.replace('bg-rose-500', 'bg-blue-600');
+                addLog("⏸️ Analysis Paused");
             }
         }
 
         async function renderLoop() {
             if (!isAIRunning || vSource.paused || vSource.ended) return;
+
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = vSource.videoWidth;
             tempCanvas.height = vSource.videoHeight;
-            tempCanvas.getContext('2d').drawImage(vSource, 0, 0);
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(vSource, 0, 0);
 
             tempCanvas.toBlob(async (blob) => {
                 if (!blob || !isAIRunning) return;
@@ -179,11 +213,7 @@
                             ctx.clearRect(0, 0, vCanvas.width, vCanvas.height);
                             ctx.drawImage(img, 0, 0, vCanvas.width, vCanvas.height);
                             updateStatus(data.status, data.pixel_count);
-                            
-                            // เก็บข้อมูลเข้า Array (ถ้าเป็น Missing)
-                            if (data.status === "MISSING") {
-                                saveLog("Live/Video", data.status, data.pixel_count);
-                            }
+                            if(data.status === "MISSING") saveLog("Video/Live", data.status, data.pixel_count);
                             requestAnimationFrame(renderLoop);
                         };
                         img.src = "data:image/jpeg;base64," + data.image;
@@ -192,30 +222,34 @@
             }, 'image/jpeg', 0.6);
         }
 
-        // --- ระบบรูปภาพ ---
+        // --- Image Batch Processor ---
         async function handleImageUpload(input) {
             const files = input.files;
             if (!files.length) return;
-            
-            addLog(`🖼️ กำลังประมวลผลรูปภาพ ${files.length} ไฟล์...`);
+            addLog(`🖼️ Processing ${files.length} Images...`);
             
             for (let file of files) {
                 const id = 'img-' + Math.random().toString(36).substr(2, 5);
                 const originalUrl = URL.createObjectURL(file);
                 
-                // สร้าง Card แสดงผล
                 const cardHtml = `
-                    <div id="card-${id}" class="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden p-6 result-card">
-                        <div class="flex justify-between items-center border-b pb-3 mb-4">
-                            <span class="font-bold text-slate-700">${file.name}</span>
-                            <p id="st-${id}" class="text-sm font-bold text-blue-500 italic">กำลังวิเคราะห์...</p>
-                            <button onclick="document.getElementById('card-${id}').remove()" class="text-red-400 text-xs">ลบรายการ</button>
+                <div id="card-${id}" class="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden result-card">
+                    <div class="flex justify-between items-center p-5 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleCard('${id}')">
+                        <div class="flex items-center gap-4">
+                            <span id="icon-${id}" class="text-blue-500 font-bold transition-transform">▼</span>
+                            <span class="font-black text-slate-700 text-sm tracking-tight truncate max-w-[150px]">${file.name}</span>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="relative"><span class="img-label">ORIGINAL</span><img src="${originalUrl}" class="rounded-xl border w-full"></div>
-                            <div class="relative"><span class="img-label">RESULT</span><img id="res-${id}" class="rounded-xl border w-full bg-slate-50 min-h-[200px]"></div>
+                        <div class="flex items-center gap-4">
+                            <p id="st-${id}" class="text-xs font-black uppercase px-3 py-1 bg-slate-200 text-slate-500 rounded-full italic">Analyzing...</p>
+                            <button onclick="event.stopPropagation(); document.getElementById('card-${id}').remove()" class="p-2 hover:bg-red-50 rounded-full text-red-400 transition-colors">✕</button>
                         </div>
-                    </div>`;
+                    </div>
+                    <div id="body-${id}" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-slate-100 overflow-hidden transition-all duration-300">
+                        <div class="relative"><span class="img-label">ORIGINAL</span><img src="${originalUrl}" class="rounded-2xl border w-full h-auto shadow-sm"></div>
+                        <div class="relative"><span class="img-label">AI RESULT</span><img id="res-${id}" class="rounded-2xl border w-full h-auto bg-slate-100 min-h-[200px] shadow-inner"></div>
+                    </div>
+                </div>`;
+                
                 document.getElementById('imageResultsList').insertAdjacentHTML('afterbegin', cardHtml);
 
                 const fd = new FormData();
@@ -226,56 +260,51 @@
                 try {
                     const res = await fetch(API_URL, { method: 'POST', body: fd });
                     const data = await res.json();
-                    
                     if(data.success) {
                         document.getElementById(`res-${id}`).src = "data:image/jpeg;base64," + data.image;
-                        const statusEl = document.getElementById(`st-${id}`);
-                        statusEl.innerText = data.status === "MISSING" ? `🚨 MISSING (${data.pixel_count} px)` : `✅ GOOD`;
-                        statusEl.className = `text-sm font-bold ${data.status === 'MISSING' ? 'text-red-600' : 'text-green-600'}`;
+                        const st = document.getElementById(`st-${id}`);
+                        st.innerText = data.status === "MISSING" ? `🚨 MISSING (${data.pixel_count} PX)` : `✅ GOOD`;
+                        st.className = `text-xs font-black uppercase px-3 py-1 rounded-full ${data.status === 'MISSING' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`;
                         saveLog(file.name, data.status, data.pixel_count);
                     }
-                } catch (e) { addLog("❌ วิเคราะห์รูปภาพล้มเหลว"); }
+                } catch (e) { addLog("❌ Upload Error"); }
             }
-            input.value = ""; // เคลียร์ช่อง input
+            input.value = ""; 
         }
 
-        // --- ระบบเสริม (CSV & Status) ---
+        // --- Utils ---
+        function toggleCard(id) {
+            const body = document.getElementById(`body-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+            body.classList.toggle('hidden');
+            icon.style.transform = body.classList.contains('hidden') ? 'rotate(-90deg)' : 'rotate(0deg)';
+        }
+
         function updateStatus(s, px) {
             const el = document.getElementById('vStatus');
             if (s === "MISSING") {
-                el.innerText = `🚨 ตรวจพบ: ${px} PX`;
-                el.className = "text-center py-5 rounded-2xl text-xl font-bold bg-red-600 text-white shadow-xl animate-pulse";
+                el.innerText = `🚨 DEFECT DETECTED: ${px} PX`;
+                el.className = "text-center py-6 rounded-3xl text-xl font-black bg-rose-600 text-white shadow-xl animate-pulse uppercase tracking-tighter";
             } else {
-                el.innerText = "✅ สถานะ: ปกติ";
-                el.className = "text-center py-5 rounded-2xl text-xl font-bold bg-green-500 text-white";
+                el.innerText = "✅ SYSTEM NORMAL (GOOD)";
+                el.className = "text-center py-6 rounded-3xl text-xl font-black bg-emerald-500 text-white shadow-lg uppercase tracking-tighter";
             }
         }
 
         function saveLog(source, status, px) {
-            inspectionData.push({
-                time: new Date().toLocaleString(),
-                source: source,
-                status: status,
-                pixels: px
-            });
-            document.getElementById('logCount').innerText = `บันทึกสะสม: ${inspectionData.length} รายการ`;
+            inspectionData.push({ time: new Date().toLocaleString(), source, status, px });
+            document.getElementById('logCount').innerText = `${inspectionData.length} Items`;
         }
 
         function exportToCSV() {
-            if (inspectionData.length === 0) return alert("ไม่มีข้อมูลที่จะส่งออก");
-            let csvContent = "\uFEFF"; // รองรับภาษาไทยใน Excel
-            csvContent += "Timestamp,Source,Status,Pixels\n";
-            inspectionData.forEach(row => {
-                csvContent += `${row.time},${row.source},${row.status},${row.pixels}\n`;
-            });
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
+            if (!inspectionData.length) return alert("No Data Found");
+            let csv = "\uFEFFTimestamp,Source,Status,Pixels\n";
+            inspectionData.forEach(r => csv += `${r.time},${r.source},${r.status},${r.px}\n`);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", `Inspection_Report_${Date.now()}.csv`);
-            document.body.appendChild(link);
+            link.href = URL.createObjectURL(blob);
+            link.download = `Inspection_Log_${Date.now()}.csv`;
             link.click();
-            document.body.removeChild(link);
         }
 
         function stopAll() {
@@ -284,7 +313,12 @@
             if (vSource.srcObject) vSource.srcObject.getTracks().forEach(t => t.stop());
             vSource.srcObject = null;
             vSource.src = "";
-            addLog("⏹️ เคลียร์ระบบ");
+            const camBtn = document.getElementById('camBtn');
+            camBtn.innerText = "📹 Open Camera";
+            camBtn.className = "flex-1 py-3 bg-slate-800 text-white font-bold rounded-2xl hover:bg-slate-900 transition-all";
+            document.getElementById('runBtn').disabled = true;
+            document.getElementById('runBtn').classList.add('opacity-50', 'cursor-not-allowed');
+            addLog("⏹️ System Released");
         }
 
         function setMode(m) {
