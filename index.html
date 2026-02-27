@@ -160,10 +160,17 @@
 
         async function processFrame() {
             if (vSource.paused || vSource.ended) return;
-            vCanvas.width = vSource.videoWidth;
-            vCanvas.height = vSource.videoHeight;
+
+            // 1. ตั้งขนาด Canvas ให้เท่ากับวิดีโอที่กำลังเล่นอยู่จริง
+            if (vCanvas.width !== vSource.videoWidth) {
+                vCanvas.width = vSource.videoWidth;
+                vCanvas.height = vSource.videoHeight;
+            }
+
+            // 2. วาดภาพปัจจุบันจากวิดีโอลง Canvas ก่อน (เพื่อให้เห็นภาพเคลื่อนไหว)
             ctx.drawImage(vSource, 0, 0, vCanvas.width, vCanvas.height);
 
+            // 3. ส่งภาพไปให้ AI ในเครื่องประมวลผล
             vCanvas.toBlob(async (blob) => {
                 const fd = new FormData();
                 fd.append('image', blob, 'f.jpg');
@@ -173,18 +180,25 @@
                 try {
                     const res = await fetch(API_URL, { method: 'POST', body: fd });
                     const data = await res.json();
-                    if (data.success) {
+                    
+                    if (data.success && data.image) {
                         const img = new Image();
                         img.onload = () => {
+                            // 4. เมื่อ AI ส่งภาพที่มี Mask/กรอบ กลับมา ให้วาดทับลงไปทันที
                             ctx.clearRect(0, 0, vCanvas.width, vCanvas.height);
                             ctx.drawImage(img, 0, 0, vCanvas.width, vCanvas.height);
                             updateVStatus(data.status);
+                            
+                            // 5. เรียกเฟรมถัดไปทันที (Real-time Sync)
                             requestAnimationFrame(processFrame);
                         };
                         img.src = "data:image/jpeg;base64," + data.image;
                     }
-                } catch (e) { setTimeout(processFrame, 500); }
-            }, 'image/jpeg', 0.5);
+                } catch (e) {
+                    // ถ้า Error (เช่นเน็ตกระตุก) ให้รอ 0.1 วินาทีแล้วเริ่มใหม่
+                    setTimeout(processFrame, 100);
+                }
+            }, 'image/jpeg', 0.4); // ลดคุณภาพเหลือ 0.4 เพื่อความเร็วในการส่งข้อมูลผ่าน ngrok
         }
 
         function updateVStatus(s) {
@@ -195,3 +209,4 @@
     </script>
 </body>
 </html>
+
