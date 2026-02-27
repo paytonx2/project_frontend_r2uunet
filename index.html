@@ -62,7 +62,7 @@
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 <div>
                     <p class="text-sm font-bold text-slate-500 mb-2">ต้นฉบับ (Original)</p>
-                    <video id="vSource" autoplay muted playsinline controls></video>
+                    <video id="vSource" muted playsinline controls></video>
                 </div>
                 <div>
                     <p class="text-sm font-bold text-blue-600 mb-2">AI ผลลัพธ์ (Result)</p>
@@ -92,29 +92,34 @@
             document.getElementById('btnVideo').classList.toggle('active-mode', m === 'video');
         }
 
-        // --- ระบบ Video เริ่มทันทีที่อัปโหลด ---
+        // --- ระบบ Video ปรับปรุงใหม่เพื่อไฟล์ 150MB ---
         async function startProcessing(input) {
             const file = input.files[0];
             if (!file) return;
 
-            addLog("📂 กำลังโหลดไฟล์วิดีโอ...");
-            const url = URL.createObjectURL(file);
-            vSource.src = url;
-            vSource.load(); // บังคับให้ Browser โหลดข้อมูลใหม่
+            // ล้าง Cache เก่าเพื่อประหยัด RAM
+            if (vSource.src) URL.revokeObjectURL(vSource.src);
+            isRunning = false;
 
-            vSource.oncanplay = async () => {
-                if (isRunning) return; // กันการรันซ้ำ
+            addLog("📂 กำลังเตรียม Stream วิดีโอ...");
+            vSource.src = URL.createObjectURL(file);
+            vSource.load();
+
+            vSource.onloadedmetadata = () => {
                 vCanvas.width = vSource.videoWidth;
                 vCanvas.height = vSource.videoHeight;
+                addLog("✅ โหลด Metadata สำเร็จ: กำลังเริ่มเล่น...");
                 
-                try {
-                    await vSource.play();
-                    isRunning = true;
-                    addLog("🚀 เริ่มการวิเคราะห์ AI...");
-                    renderFrame();
-                } catch (e) {
-                    addLog("⚠️ คลิกที่หน้าจอวิดีโอเพื่อเริ่มเล่น");
-                }
+                // พยายามเล่นอัตโนมัติ
+                vSource.play().then(() => {
+                    if (!isRunning) {
+                        isRunning = true;
+                        addLog("🚀 AI เริ่มวิเคราะห์...");
+                        renderFrame();
+                    }
+                }).catch(() => {
+                    addLog("⚠️ Browser บล็อก: กรุณากดปุ่ม Play ที่วิดีโอ");
+                });
             };
         }
 
@@ -124,6 +129,7 @@
             ctx.drawImage(vSource, 0, 0, vCanvas.width, vCanvas.height);
 
             vCanvas.toBlob(async (blob) => {
+                if (!blob) return;
                 const fd = new FormData();
                 fd.append('image', blob, 'f.jpg');
                 fd.append('px_threshold', document.getElementById('pxThreshold').value);
@@ -132,17 +138,22 @@
                 try {
                     const res = await fetch(API_URL, { method: 'POST', body: fd });
                     const data = await res.json();
-                    if (data.success) {
+                    if (data.success && isRunning) {
                         const img = new Image();
                         img.onload = () => {
                             ctx.drawImage(img, 0, 0, vCanvas.width, vCanvas.height);
                             updateStatus(data.status, data.pixel_count);
+                            // ใช้บีบอัดคุณภาพ 0.3 เพื่อความเร็วผ่านเน็ต
                             requestAnimationFrame(renderFrame);
                         };
                         img.src = "data:image/jpeg;base64," + data.image;
+                    } else {
+                        requestAnimationFrame(renderFrame);
                     }
-                } catch (e) { requestAnimationFrame(renderFrame); }
-            }, 'image/jpeg', 0.5);
+                } catch (e) { 
+                    setTimeout(renderFrame, 100); 
+                }
+            }, 'image/jpeg', 0.3); // บีบอัดให้เล็กลงเพื่อความลื่น
         }
 
         function updateStatus(s, px) {
@@ -185,6 +196,11 @@
                     document.getElementById(`st-${id}`).className = `font-bold ${data.status === 'MISSING' ? 'text-red-600' : 'text-green-600'}`;
                 } catch(err) { addLog("❌ API Error"); }
             }
+        };
+        
+        // อัปเดตตัวเลข Confidence ตาม Slider
+        document.getElementById('confThreshold').oninput = function() {
+            document.getElementById('confVal').innerText = this.value;
         };
     </script>
 </body>
