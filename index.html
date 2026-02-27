@@ -12,7 +12,8 @@
         video, canvas { background: #000; width: 100%; border-radius: 16px; border: 2px solid #fff; min-height: 250px; }
         .active-mode { background-color: #2563eb !important; color: white !important; }
         
-        /* สไตล์สำหรับการพับเก็บ (Accordion) */
+        /* สไตล์ Slider */
+        input[type=range] { width: 100%; cursor: pointer; }
         .compare-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px; transition: all 0.3s ease; }
         .img-label { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.6); color: white; padding: 2px 8px; border-radius: 6px; font-size: 10px; pointer-events: none; z-index: 10; }
         .result-card { transition: all 0.3s ease; overflow: hidden; }
@@ -22,14 +23,37 @@
 </head>
 <body class="min-h-screen flex flex-col md:flex-row">
 
-    <div class="w-full md:w-80 bg-slate-900 text-white p-6 flex-shrink-0 shadow-2xl">
-        <h2 class="text-2xl font-bold mb-6 text-blue-400">⚙️ แผงควบคุม</h2>
+    <div class="w-full md:w-80 bg-slate-900 text-white p-6 flex-shrink-0 shadow-2xl overflow-y-auto">
+        <h2 class="text-2xl font-bold mb-6 text-blue-400 flex items-center gap-2">⚙️ แผงควบคุม</h2>
+        
         <div class="space-y-6">
             <div>
                 <label class="block text-sm text-slate-400 mb-2 font-medium">Pixel Threshold</label>
-                <input type="number" id="pxThreshold" value="15" class="w-full bg-slate-800 p-3 rounded-xl border border-slate-700 outline-none">
+                <input type="number" id="pxThreshold" value="15" class="w-full bg-slate-800 p-3 rounded-xl border border-slate-700 outline-none text-blue-400 font-bold">
             </div>
-            
+
+            <div>
+                <div class="flex justify-between mb-2">
+                    <label class="text-sm text-slate-400 font-medium">Confidence</label>
+                    <span id="valConfidence" class="text-blue-400 font-bold">0.50</span>
+                </div>
+                <input type="range" id="inpConfidence" min="0.10" max="0.95" step="0.05" value="0.50" 
+                    oninput="document.getElementById('valConfidence').innerText = parseFloat(this.value).toFixed(2)"
+                    class="accent-blue-500">
+            </div>
+
+            <div>
+                <div class="flex justify-between mb-2">
+                    <label class="text-sm text-slate-400 font-medium">Noise Filter (Blur)</label>
+                    <span id="valNoise" class="text-blue-400 font-bold">1.0</span>
+                </div>
+                <input type="range" id="inpNoise" min="0" max="2" step="0.1" value="1.0" 
+                    oninput="document.getElementById('valNoise').innerText = parseFloat(this.value).toFixed(1)"
+                    class="accent-blue-500">
+            </div>
+
+            <hr class="border-slate-800">
+
             <div class="p-4 bg-slate-800 rounded-2xl border border-slate-700">
                 <p class="text-xs text-slate-400 mb-2 uppercase font-bold">Data Logging</p>
                 <button onclick="exportToCSV()" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2">
@@ -98,7 +122,6 @@
             systemLog.scrollTop = systemLog.scrollHeight;
         }
 
-        // --- ระบบย่อ/ขยาย (Accordion) ---
         function toggleCollapse(id) {
             const card = document.getElementById(`card-${id}`);
             const arrow = document.getElementById(`arrow-${id}`);
@@ -106,14 +129,8 @@
             arrow.classList.toggle('rotate-180');
         }
 
-        // --- CSV Logging ---
         function addToLogs(source, status, pixels) {
-            const entry = {
-                timestamp: new Date().toLocaleString(),
-                source: source,
-                status: status,
-                pixel_count: pixels
-            };
+            const entry = { timestamp: new Date().toLocaleString(), source, status, pixel_count: pixels };
             inspectionData.push(entry);
             document.getElementById('logCount').innerText = `บันทึกแล้ว: ${inspectionData.length} รายการ`;
         }
@@ -121,9 +138,7 @@
         function exportToCSV() {
             if (inspectionData.length === 0) return alert("ไม่มีข้อมูลให้บันทึก");
             let csvContent = "data:text/csv;charset=utf-8,Time,Source,Status,Pixels\n";
-            inspectionData.forEach(row => {
-                csvContent += `${row.timestamp},${row.source},${row.status},${row.pixel_count}\n`;
-            });
+            inspectionData.forEach(row => { csvContent += `${row.timestamp},${row.source},${row.status},${row.pixel_count}\n`; });
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
@@ -133,7 +148,6 @@
             addLog("📊 ส่งออกไฟล์ CSV สำเร็จ");
         }
 
-        // --- Camera & Video Controls ---
         async function toggleCamera() {
             if (!isCameraOpen) {
                 try {
@@ -145,9 +159,7 @@
                     document.getElementById('runBtn').disabled = false;
                     document.getElementById('runBtn').classList.remove('opacity-50', 'cursor-not-allowed');
                 } catch (e) { addLog("❌ เปิดกล้องไม่ได้"); }
-            } else {
-                stopAll();
-            }
+            } else { stopAll(); }
         }
 
         function loadVideo(input) {
@@ -189,7 +201,11 @@
                 if (!blob || !isAIRunning) return;
                 const fd = new FormData();
                 fd.append('image', blob, 'f.jpg');
+                // ส่งค่า Parameters ไปยัง API
                 fd.append('px_threshold', document.getElementById('pxThreshold').value);
+                fd.append('confidence', document.getElementById('inpConfidence').value);
+                fd.append('noise_filter', document.getElementById('inpNoise').value);
+
                 try {
                     const res = await fetch(API_URL, { method: 'POST', body: fd });
                     const data = await res.json();
@@ -230,44 +246,35 @@
                             </div>
                             <button onclick="event.stopPropagation(); document.getElementById('card-${id}').remove()" class="text-slate-300 hover:text-red-500 text-sm px-2">ลบรายการ</button>
                         </div>
-                        
                         <div class="compare-container p-6 pt-2">
-                            <div class="relative">
-                                <span class="img-label">ต้นฉบับ</span>
-                                <img src="${originalUrl}" class="w-full h-auto rounded-2xl border bg-slate-50 object-contain min-h-[250px]">
-                            </div>
+                            <div class="relative"><span class="img-label">ต้นฉบับ</span><img src="${originalUrl}" class="w-full h-auto rounded-2xl border bg-slate-50 object-contain min-h-[250px]"></div>
                             <div class="relative">
                                 <span class="img-label">AI วิเคราะห์</span>
                                 <img id="${id}" class="w-full h-auto rounded-2xl border bg-slate-100 object-contain min-h-[250px]">
-                                <div id="loader-${id}" class="absolute inset-0 flex items-center justify-center bg-white/60 rounded-2xl">
-                                     <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
-                                </div>
+                                <div id="loader-${id}" class="absolute inset-0 flex items-center justify-center bg-white/60 rounded-2xl"><div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div></div>
                             </div>
                         </div>
                     </div>
                 `;
-                
                 document.getElementById('imageResultsList').insertAdjacentHTML('afterbegin', cardHtml);
 
                 const fd = new FormData();
                 fd.append('image', file);
+                // ส่งค่า Parameters ไปยัง API
                 fd.append('px_threshold', document.getElementById('pxThreshold').value);
+                fd.append('confidence', document.getElementById('inpConfidence').value);
+                fd.append('noise_filter', document.getElementById('inpNoise').value);
 
                 try {
                     const res = await fetch(API_URL, { method: 'POST', body: fd });
                     const data = await res.json();
-                    
                     document.getElementById(id).src = "data:image/jpeg;base64," + data.image;
                     document.getElementById(`loader-${id}`).classList.add('hidden');
-                    
                     const statusEl = document.getElementById(`st-${id}`);
                     statusEl.innerText = data.status === "MISSING" ? `🚨 MISSING (${data.pixel_count} px)` : `✅ NORMAL`;
                     statusEl.className = `font-bold text-sm ${data.status === 'MISSING' ? 'text-red-600' : 'text-green-600'}`;
-                    
                     addToLogs(file.name, data.status, data.pixel_count);
-                } catch (error) {
-                    document.getElementById(`st-${id}`).innerText = "❌ ผิดพลาด";
-                }
+                } catch (error) { document.getElementById(`st-${id}`).innerText = "❌ ผิดพลาด"; }
             }
             e.target.value = "";
         };
