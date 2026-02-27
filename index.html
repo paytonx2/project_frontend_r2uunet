@@ -117,48 +117,46 @@
             systemLog.scrollTop = systemLog.scrollHeight;
         }
 
-        // --- แก้ไขการโหลดวิดีโอให้แสดงผลแน่นอน ---
         function handleVideoUpload(input) {
             const file = input.files[0];
             if (!file) return;
 
-            addLog("⏳ กำลังเตรียมวิดีโอ: " + file.name);
-            
-            // 1. สร้าง URL จากไฟล์
-            const url = URL.createObjectURL(file);
-            
-            // 2. เคลียร์ค่าเดิมและหยุดระบบเก่าทั้งหมด
+            addLog("⏳ กำลังอ่านไฟล์วิดีโอด้วย FileReader...");
+            const reader = new FileReader();
+
+            // เคลียร์ค่าเดิม
             if (isCameraOpen) stopAll();
-            isAIRunning = false;
-            document.getElementById('runBtn').innerText = "▶️ เริ่มประมวลผล AI";
-            
-            // 3. ปรับค่า Video Tag
             vSource.pause();
-            vSource.srcObject = null;
-            vSource.src = url;
-            vSource.load(); // บังคับเบราว์เซอร์ให้โหลด Metadata
+            vSource.src = "";
+            vSource.load();
 
-            // 4. เมื่อโหลดข้อมูลเบื้องต้นสำเร็จ
-            vSource.onloadeddata = function() {
-                addLog("✅ ไฟล์วิดีโอโหลดสำเร็จ");
-                vSource.play().catch(e => {
-                    addLog("⚠️ คำแนะนำ: กดปุ่ม Play ที่วิดีโอเพื่อเริ่ม");
-                });
+            reader.onload = function(e) {
+                addLog("✅ อ่านข้อมูลไฟล์สำเร็จ กำลังโหลดเข้าเครื่องเล่น...");
                 
-                // ปรับขนาดแคนวาสให้เท่ากับวิดีโอ
-                vCanvas.width = vSource.videoWidth;
-                vCanvas.height = vSource.videoHeight;
+                // ใช้ผลลัพธ์จาก Reader เป็น Source โดยตรง
+                vSource.src = e.target.result;
                 
-                document.getElementById('runBtn').disabled = false;
-                document.getElementById('runBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-                document.getElementById('vStatus').innerText = "วิดีโอพร้อม - กดปุ่มเริ่มรัน AI";
+                vSource.onloadedmetadata = function() {
+                    vSource.muted = true;
+                    vSource.play().then(() => {
+                        addLog("🚀 วิดีโอเริ่มทำงานแล้ว!");
+                        vCanvas.width = vSource.videoWidth;
+                        vCanvas.height = vSource.videoHeight;
+                        document.getElementById('runBtn').disabled = false;
+                        document.getElementById('runBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+                        document.getElementById('vStatus').innerText = "พร้อมประมวลผล";
+                    }).catch(err => {
+                        addLog("⚠️ เบราว์เซอร์บล็อก Auto-play กรุณากดปุ่ม Play ที่วิดีโอ");
+                    });
+                };
             };
 
-            // 5. ดักจับ Error เฉพาะจุด
-            vSource.onerror = function() {
-                addLog("❌ เบราว์เซอร์ปฏิเสธไฟล์นี้ (Error Code: " + vSource.error.code + ")");
-                console.error("Video Error:", vSource.error);
+            reader.onerror = function() {
+                addLog("❌ FileReader เกิดข้อผิดพลาดในการอ่านไฟล์");
             };
+
+            // เริ่มอ่านไฟล์เป็น DataURL
+            reader.readAsDataURL(file);
         }
 
         async function toggleCamera() {
@@ -316,4 +314,5 @@
     </script>
 </body>
 </html>
+
 
