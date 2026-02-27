@@ -3,89 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Inspection System V3</title>
+    <title>AI Inspection Fixed</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700&display=swap');
         body { font-family: 'Kanit', sans-serif; background: #f0f2f5; }
-        .log-box { font-family: monospace; font-size: 11px; height: 120px; overflow-y: auto; background: #1a1a1a; color: #00ff00; padding: 12px; border-radius: 12px; }
+        .log-box { font-family: monospace; font-size: 11px; height: 100px; overflow-y: auto; background: #1a1a1a; color: #00ff00; padding: 10px; border-radius: 12px; }
         video, canvas { background: #000; width: 100%; border-radius: 16px; border: 2px solid #fff; min-height: 250px; }
-        .active-mode { background-color: #2563eb !important; color: white !important; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col md:flex-row">
 
     <div class="w-full md:w-80 bg-slate-900 text-white p-6 flex-shrink-0 shadow-2xl">
         <h2 class="text-2xl font-bold mb-6 text-blue-400">⚙️ แผงควบคุม</h2>
-        <div class="space-y-6">
-            <div>
-                <label class="block text-sm text-slate-400 mb-2">Pixel Threshold</label>
+        <div class="space-y-4">
+            <button onclick="setMode('image')" id="btnImage" class="w-full py-3 rounded-xl font-bold bg-slate-800 text-slate-400 border border-slate-700">📷 โหมดรูปภาพ</button>
+            <button onclick="setMode('video')" id="btnVideo" class="w-full py-3 rounded-xl font-bold bg-blue-600 text-white shadow-lg">🎥 โหมดวิดีโอ</button>
+            
+            <div class="pt-4 border-t border-slate-700">
+                <label class="block text-xs text-slate-400 mb-1">Pixel Threshold</label>
                 <input type="number" id="pxThreshold" value="15" class="w-full bg-slate-800 p-2 rounded-lg border border-slate-700 outline-none">
             </div>
-            <div>
-                <label class="block text-sm text-slate-400 mb-2 font-bold">Confidence: <span id="confVal" class="text-blue-400">0.35</span></label>
-                <input type="range" id="confThreshold" min="0.1" max="0.95" step="0.05" value="0.35" class="w-full accent-blue-500 cursor-pointer">
-            </div>
             
-            <div id="systemLog" class="log-box text-xs">ระบบพร้อม...</div>
-            <button onclick="location.reload()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold transition-all border border-slate-700">🔄 รีเซ็ตหน้าเว็บ</button>
+            <div id="systemLog" class="log-box text-xs mt-4">ระบบพร้อม...</div>
+            <button onclick="location.reload()" class="w-full py-2 text-xs bg-slate-800 text-slate-500 rounded-lg mt-2">🔄 รีเฟรชหน้า</button>
         </div>
     </div>
 
     <div class="flex-1 p-6 md:p-10 overflow-y-auto">
-        <header class="mb-8 flex justify-between items-center border-b pb-6">
-            <div>
-                <h1 class="text-3xl font-bold text-slate-800">R2U-NET INSPECTION</h1>
-                <p class="text-slate-500 italic">เลือกโหมดที่ต้องการใช้งาน</p>
+        
+        <div id="videoSection" class="space-y-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                <p class="text-sm font-bold text-slate-500 mb-2 font-bold uppercase">1. เลือกไฟล์วิดีโอ</p>
+                <input type="file" id="videoInput" accept="video/*" class="w-full mb-4">
+                <p class="text-xs text-red-500 mb-4 font-bold">* เมื่อเลือกเสร็จ ให้กดปุ่ม Play ที่ตัววิดีโอฝั่งซ้ายได้เลยครับ</p>
             </div>
-            <div class="flex gap-2 bg-white p-1 rounded-2xl shadow-sm border border-slate-200">
-                <button onclick="setMode('image')" id="btnImage" class="px-6 py-2 rounded-xl font-bold transition-all text-slate-500">📷 รูปภาพ</button>
-                <button onclick="setMode('video')" id="btnVideo" class="px-6 py-2 rounded-xl font-bold transition-all active-mode">🎥 วิดีโอ</button>
+            
+            <div id="vStatus" class="text-center py-4 rounded-2xl text-xl font-bold bg-slate-100 text-slate-400">สถานะ: รอเล่นวิดีโอ</div>
+            
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <div>
+                    <p class="text-xs font-bold text-slate-500 mb-2 uppercase font-bold">วิดีโอต้นฉบับ (กด PLAY ที่นี่)</p>
+                    <video id="vSource" controls muted playsinline></video>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-blue-600 mb-2 uppercase font-bold">ผลการวิเคราะห์ AI</p>
+                    <canvas id="vCanvas"></canvas>
+                </div>
             </div>
-        </header>
+        </div>
 
         <div id="imageSection" class="hidden space-y-6">
-            <div onclick="document.getElementById('imageInput').click()" class="bg-white p-10 rounded-3xl border-4 border-dashed border-slate-200 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all">
+            <div class="bg-white p-10 rounded-3xl border-4 border-dashed border-slate-200 text-center cursor-pointer hover:bg-blue-50" onclick="document.getElementById('imageInput').click()">
                 <input type="file" id="imageInput" accept="image/*" multiple class="hidden">
                 <p class="text-slate-500 font-bold text-lg">📤 คลิกเพื่ออัปโหลดรูปภาพ</p>
             </div>
             <div id="imageResultsList" class="space-y-4"></div>
         </div>
-
-        <div id="videoSection" class="space-y-6">
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col sm:flex-row gap-4 items-center">
-                <div class="flex-1">
-                    <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">1. เลือกไฟล์วิดีโอ</label>
-                    <input type="file" id="videoInput" accept="video/*" class="w-full text-sm">
-                </div>
-                <button onclick="startAI()" class="w-full sm:w-auto px-10 py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 shadow-lg active:scale-95 transition-all">2. เริ่มวิเคราะห์</button>
-            </div>
-            
-            <div id="vStatus" class="text-center py-5 rounded-2xl text-xl font-bold bg-slate-100 text-slate-400 border border-slate-200 shadow-inner">สถานะ: รอการโหลดไฟล์</div>
-            
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                <div>
-                    <p class="text-xs font-bold text-slate-500 uppercase px-2 mb-2 font-bold">วิดีโอต้นฉบับ</p>
-                    <video id="vSource" controls muted playsinline></video>
-                </div>
-                <div>
-                    <p class="text-xs font-bold text-blue-600 uppercase px-2 mb-2 font-bold">ผลการวิเคราะห์ AI</p>
-                    <canvas id="vCanvas"></canvas>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>
-        // *** อัปเดต URL ngrok ปัจจุบันของคุณ ***
         const API_URL = "https://cf2a-223-206-219-65.ngrok-free.app/predict"; 
         
         const systemLog = document.getElementById('systemLog');
         const vSource = document.getElementById('vSource');
         const vCanvas = document.getElementById('vCanvas');
-        const ctx = vCanvas.getContext('2d', { willReadFrequently: true });
-        const confSli = document.getElementById('confThreshold');
-        const pxInp = document.getElementById('pxThreshold');
+        const ctx = vCanvas.getContext('2d');
 
         function addLog(msg) {
             systemLog.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
@@ -95,122 +78,85 @@
         function setMode(m) {
             document.getElementById('imageSection').classList.toggle('hidden', m !== 'image');
             document.getElementById('videoSection').classList.toggle('hidden', m !== 'video');
-            document.getElementById('btnImage').classList.toggle('active-mode', m === 'image');
-            document.getElementById('btnVideo').classList.toggle('active-mode', m === 'video');
-            if(m === 'image') vSource.pause();
+            document.getElementById('btnImage').className = m === 'image' ? "w-full py-3 rounded-xl font-bold bg-blue-600 text-white shadow-lg" : "w-full py-3 rounded-xl font-bold bg-slate-800 text-slate-400 border border-slate-700";
+            document.getElementById('btnVideo').className = m === 'video' ? "w-full py-3 rounded-xl font-bold bg-blue-600 text-white shadow-lg" : "w-full py-3 rounded-xl font-bold bg-slate-800 text-slate-400 border border-slate-700";
         }
 
-        confSli.oninput = () => document.getElementById('confVal').innerText = confSli.value;
-
-        // --- ระบบวิดีโอ ---
+        // --- ระบบวิดีโอ (แบบ Manual Play) ---
         document.getElementById('videoInput').onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
-                const url = URL.createObjectURL(file);
-                vSource.src = url;
-                vSource.load(); 
-                vSource.onloadeddata = () => {
-                    vCanvas.width = vSource.videoWidth;
-                    vCanvas.height = vSource.videoHeight;
-                    document.getElementById('vStatus').innerText = "✅ พร้อมใช้งาน! กดปุ่มเริ่มวิเคราะห์";
-                    addLog("📂 วิดีโอพร้อมโหลด");
-                    ctx.drawImage(vSource, 0, 0, vCanvas.width, vCanvas.height);
-                };
+                vSource.src = URL.createObjectURL(file);
+                addLog("📂 ไฟล์วิดีโอโหลดแล้ว... กรุณากดปุ่ม Play");
             }
         };
 
-        function startAI() {
-            if (!vSource.src) return alert("เลือกไฟล์วิดีโอก่อนครับ");
-            
-            // ใช้ท่ามาตรฐานที่ Browser ยอมให้เล่นได้เสมอ
-            vSource.play().then(() => {
-                addLog("🚀 เริ่มประมวลผล...");
-                processFrame();
-            }).catch(err => {
-                addLog("⚠️ คลิกที่ปุ่มอีกครั้งเพื่อยืนยันการเล่น");
-            });
-        }
+        // เมื่อวิดีโอเริ่มเล่น (ไม่ว่าจะกดเองหรือระบบสั่ง) ให้เริ่มส่งเฟรมไป AI
+        vSource.onplay = () => {
+            addLog("🚀 เริ่มประมวลผลเฟรม...");
+            vCanvas.width = vSource.videoWidth;
+            vCanvas.height = vSource.videoHeight;
+            document.getElementById('vStatus').innerText = "🌀 กำลังวิเคราะห์...";
+            processFrame();
+        };
 
-        function processFrame() {
+        async function processFrame() {
             if (vSource.paused || vSource.ended) return;
 
+            // วาดต้นฉบับลง Canvas
             ctx.drawImage(vSource, 0, 0, vCanvas.width, vCanvas.height);
 
             vCanvas.toBlob(async (blob) => {
                 if(!blob) return;
                 const fd = new FormData();
-                fd.append('image', blob, 'frame.jpg');
-                fd.append('conf_threshold', confSli.value);
-                fd.append('px_threshold', pxInp.value);
+                fd.append('image', blob, 'f.jpg');
+                fd.append('conf_threshold', "0.35");
+                fd.append('px_threshold', document.getElementById('pxThreshold').value);
 
                 try {
                     const res = await fetch(API_URL, { method: 'POST', body: fd });
                     const data = await res.json();
-                    
                     if (data.success) {
                         const img = new Image();
                         img.onload = () => {
                             ctx.clearRect(0, 0, vCanvas.width, vCanvas.height);
                             ctx.drawImage(img, 0, 0, vCanvas.width, vCanvas.height);
-                            updateVStatus(data.status, data.pixel_count);
+                            
+                            const st = document.getElementById('vStatus');
+                            st.innerText = data.status === "MISSING" ? `🚨 พบความผิดปกติ (${data.pixel_count} px)` : "✅ สถานะปกติ";
+                            st.className = `text-center py-4 rounded-2xl text-xl font-bold ${data.status === 'MISSING' ? 'bg-red-600 text-white animate-pulse' : 'bg-green-500 text-white'}`;
+                            
                             requestAnimationFrame(processFrame);
                         };
                         img.src = "data:image/jpeg;base64," + data.image;
-                    } else {
-                        requestAnimationFrame(processFrame);
                     }
-                } catch (e) {
-                    setTimeout(processFrame, 500);
-                }
+                } catch (e) { setTimeout(processFrame, 500); }
             }, 'image/jpeg', 0.5);
         }
 
-        function updateVStatus(s, px) {
-            const el = document.getElementById('vStatus');
-            if (s === "MISSING") {
-                el.innerText = `🚨 พบความผิดปกติ (${px} px)`;
-                el.className = "text-center py-5 rounded-2xl text-xl font-bold bg-red-600 text-white shadow-lg animate-pulse";
-            } else {
-                el.innerText = "✅ สถานะปกติ";
-                el.className = "text-center py-5 rounded-2xl text-xl font-bold bg-green-500 text-white shadow-lg";
-            }
-        }
-
-        // --- ระบบรูปภาพ (พร้อม Accordion) ---
+        // --- ระบบรูปภาพ ---
         document.getElementById('imageInput').onchange = async (e) => {
             for (let file of e.target.files) {
                 const id = 'res-' + Math.random().toString(36).substr(2, 5);
                 document.getElementById('imageResultsList').insertAdjacentHTML('afterbegin', `
-                    <details class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" open>
-                        <summary class="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-all">
-                            <div class="flex items-center gap-4">
-                                <img src="${URL.createObjectURL(file)}" class="w-12 h-12 rounded-lg object-cover">
-                                <div id="st-${id}" class="font-bold text-blue-500">กำลังประมวลผล...</div>
-                            </div>
-                            <span class="text-slate-300">▼</span>
-                        </summary>
-                        <div class="p-4 border-t border-slate-100 flex flex-col items-center bg-slate-50">
-                            <img id="img-${id}" class="max-w-full h-auto rounded-xl shadow-lg border-4 border-white hidden">
-                        </div>
-                    </details>
+                    <div class="bg-white p-4 rounded-2xl shadow border border-slate-200">
+                        <p id="st-${id}" class="font-bold text-blue-500 mb-2">กำลังประมวลผล...</p>
+                        <img id="img-${id}" class="w-full rounded-lg hidden">
+                    </div>
                 `);
-
                 const fd = new FormData();
                 fd.append('image', file);
-                fd.append('conf_threshold', confSli.value);
-                fd.append('px_threshold', pxInp.value);
-
+                fd.append('conf_threshold', "0.35");
+                fd.append('px_threshold', document.getElementById('pxThreshold').value);
                 try {
                     const res = await fetch(API_URL, { method: 'POST', body: fd });
                     const data = await res.json();
-                    if(data.success) {
-                        const imgTag = document.getElementById(`img-${id}`);
-                        imgTag.src = "data:image/jpeg;base64," + data.image;
-                        imgTag.classList.remove('hidden');
-                        document.getElementById(`st-${id}`).innerText = data.status === "MISSING" ? `🚨 พบจุดผิดปกติ (${data.pixel_count} px)` : "✅ สถานะปกติ";
-                        document.getElementById(`st-${id}`).className = `font-bold ${data.status === 'MISSING' ? 'text-red-600' : 'text-green-600'}`;
-                    }
-                } catch(err) { addLog("❌ ติดต่อ API ล้มเหลว"); }
+                    const imgTag = document.getElementById(`img-${id}`);
+                    imgTag.src = "data:image/jpeg;base64," + data.image;
+                    imgTag.classList.remove('hidden');
+                    document.getElementById(`st-${id}`).innerText = data.status === "MISSING" ? "🚨 ผิดปกติ" : "✅ ปกติ";
+                    document.getElementById(`st-${id}`).className = `font-bold ${data.status === 'MISSING' ? 'text-red-600' : 'text-green-600'}`;
+                } catch(err) { addLog("❌ API Error"); }
             }
         };
     </script>
