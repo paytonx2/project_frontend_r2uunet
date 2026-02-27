@@ -119,34 +119,46 @@
 
         // --- แก้ไขการโหลดวิดีโอให้แสดงผลแน่นอน ---
         function handleVideoUpload(input) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                const url = URL.createObjectURL(file);
-                
-                addLog("⏳ กำลังเตรียมวิดีโอ...");
-                
-                // เคลียร์ค่าเก่า
-                if (isCameraOpen) stopAll();
-                vSource.srcObject = null;
-                
-                // ตั้งค่า src และเริ่มโหลด
-                vSource.src = url;
-                vSource.load(); 
+            const file = input.files[0];
+            if (!file) return;
 
-                vSource.oncanplay = () => {
-                    vSource.play(); // สั่งให้เล่นเพื่อให้มีเฟรมส่งไป AI
-                    vCanvas.width = vSource.videoWidth;
-                    vCanvas.height = vSource.videoHeight;
-                    document.getElementById('runBtn').disabled = false;
-                    document.getElementById('runBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-                    addLog("✅ วิดีโอพร้อมแล้ว: " + file.name);
-                    document.getElementById('vStatus').innerText = "วิดีโอพร้อม - กดปุ่มเริ่มรัน AI";
-                };
+            addLog("⏳ กำลังเตรียมวิดีโอ: " + file.name);
+            
+            // 1. สร้าง URL จากไฟล์
+            const url = URL.createObjectURL(file);
+            
+            // 2. เคลียร์ค่าเดิมและหยุดระบบเก่าทั้งหมด
+            if (isCameraOpen) stopAll();
+            isAIRunning = false;
+            document.getElementById('runBtn').innerText = "▶️ เริ่มประมวลผล AI";
+            
+            // 3. ปรับค่า Video Tag
+            vSource.pause();
+            vSource.srcObject = null;
+            vSource.src = url;
+            vSource.load(); // บังคับเบราว์เซอร์ให้โหลด Metadata
 
-                vSource.onerror = () => {
-                    addLog("❌ ไฟล์วิดีโอไม่รองรับหรือเสียหาย");
-                };
-            }
+            // 4. เมื่อโหลดข้อมูลเบื้องต้นสำเร็จ
+            vSource.onloadeddata = function() {
+                addLog("✅ ไฟล์วิดีโอโหลดสำเร็จ");
+                vSource.play().catch(e => {
+                    addLog("⚠️ คำแนะนำ: กดปุ่ม Play ที่วิดีโอเพื่อเริ่ม");
+                });
+                
+                // ปรับขนาดแคนวาสให้เท่ากับวิดีโอ
+                vCanvas.width = vSource.videoWidth;
+                vCanvas.height = vSource.videoHeight;
+                
+                document.getElementById('runBtn').disabled = false;
+                document.getElementById('runBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+                document.getElementById('vStatus').innerText = "วิดีโอพร้อม - กดปุ่มเริ่มรัน AI";
+            };
+
+            // 5. ดักจับ Error เฉพาะจุด
+            vSource.onerror = function() {
+                addLog("❌ เบราว์เซอร์ปฏิเสธไฟล์นี้ (Error Code: " + vSource.error.code + ")");
+                console.error("Video Error:", vSource.error);
+            };
         }
 
         async function toggleCamera() {
@@ -304,3 +316,4 @@
     </script>
 </body>
 </html>
+
