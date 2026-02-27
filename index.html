@@ -3,78 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R2U-Net Pro Dashboard | Fix Playback</title>
+    <title>R2U-Net Pro | Final Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .log-box { font-family: 'Courier New', monospace; font-size: 11px; height: 120px; overflow-y: auto; background: #1a1a1a; color: #4ade80; padding: 10px; border-radius: 8px; }
-        #vCanvas { background-color: #000; width: 100%; height: auto; border-radius: 12px; border: 2px solid #3b82f6; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
-    </style>
+        body { font-family: sans-serif; background: #f8fafc; }
+        .log-box { font-family: monospace; font-size: 11px; height: 120px; overflow-y: auto; background: #000; color: #4ade80; padding: 10px; border-radius: 8px; }
+        #vCanvas { background: #000; width: 100%; border-radius: 12px; border: 2px solid #3b82f6; }
+    </video>
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col md:flex-row">
+<body class="min-h-screen flex flex-col md:flex-row">
 
-    <div class="w-full md:w-80 bg-slate-900 text-white p-6 shadow-2xl flex-shrink-0">
-        <h2 class="text-2xl font-black mb-6 text-blue-400 tracking-tighter uppercase">R2U-Net Control</h2>
+    <div class="w-full md:w-80 bg-slate-900 text-white p-6 flex-shrink-0 shadow-xl">
+        <h2 class="text-xl font-bold mb-6 text-blue-400 uppercase tracking-widest">Control Panel</h2>
         <div class="mb-6 space-y-4">
             <div>
-                <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Pixel Threshold</label>
-                <input type="number" id="pxThreshold" value="15" class="w-full bg-slate-800 p-3 rounded-xl border border-slate-700 outline-none text-white">
+                <label class="block text-xs text-slate-400 mb-1">Pixel Threshold</label>
+                <input type="number" id="pxThreshold" value="15" class="w-full bg-slate-800 p-2 rounded border border-slate-700 outline-none">
             </div>
             <div>
-                <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Confidence: <span id="confVal" class="text-blue-400">0.35</span></label>
-                <input type="range" id="confThreshold" min="0.1" max="0.95" step="0.05" value="0.35" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                <label class="block text-xs text-slate-400 mb-1">Confidence: <span id="confVal" class="text-blue-400">0.35</span></label>
+                <input type="range" id="confThreshold" min="0.1" max="0.95" step="0.05" value="0.35" class="w-full accent-blue-500">
             </div>
         </div>
         <div class="mb-6">
-            <p class="text-[10px] font-bold uppercase text-slate-500 mb-2">System Live Logs</p>
-            <div id="systemLog" class="log-box">Initialized... Ready.</div>
+            <p class="text-[10px] text-slate-500 font-bold mb-1 uppercase">Logs</p>
+            <div id="systemLog" class="log-box">Ready...</div>
         </div>
-        <button onclick="window.location.reload()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl font-bold">🔄 REBOOT SYSTEM</button>
+        <button onclick="location.reload()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 rounded text-sm font-bold border border-slate-600 transition">RELOAD SYSTEM</button>
     </div>
 
-    <div class="flex-1 p-4 md:p-10 overflow-y-auto">
-        <header class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-                <h1 class="text-4xl font-black text-slate-800 tracking-tight uppercase">Defect Inspection</h1>
-                <p class="text-slate-500 font-medium italic">R2U-Net Model Implementation</p>
-            </div>
-            <div class="flex gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
-                <button onclick="setMode('image')" id="btnImage" class="px-6 py-2.5 rounded-xl font-bold bg-blue-600 text-white">📷 IMAGE</button>
-                <button onclick="setMode('video')" id="btnVideo" class="px-6 py-2.5 rounded-xl font-bold bg-slate-50 text-slate-500">🎥 VIDEO</button>
+    <div class="flex-1 p-4 md:p-10">
+        <header class="mb-8 flex justify-between items-center">
+            <h1 class="text-2xl font-black text-slate-800 uppercase">Defect Inspection System</h1>
+            <div class="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-slate-200">
+                <button onclick="setMode('image')" id="btnImage" class="px-4 py-2 rounded-lg font-bold bg-blue-600 text-white">IMAGE</button>
+                <button onclick="setMode('video')" id="btnVideo" class="px-4 py-2 rounded-lg font-bold bg-slate-100 text-slate-500">VIDEO</button>
             </div>
         </header>
 
-        <div id="imageSection" class="space-y-6">
-            <div class="bg-white p-12 rounded-[2rem] border-4 border-dashed border-slate-200 text-center cursor-pointer" onclick="document.getElementById('imageInput').click()">
+        <div id="imageSection" class="space-y-4">
+            <div class="bg-white p-10 rounded-2xl border-4 border-dashed border-slate-200 text-center cursor-pointer" onclick="document.getElementById('imageInput').click()">
                 <input type="file" id="imageInput" accept="image/*" multiple class="hidden">
-                <p class="text-slate-600 font-bold text-lg">📤 เลือกรูปภาพ (หลายรูปพร้อมกัน)</p>
+                <p class="font-bold text-slate-500 italic uppercase">Click to upload multiple images</p>
             </div>
-            <div id="imageResultsList" class="grid grid-cols-1 gap-6"></div>
+            <div id="imageResultsList" class="space-y-4"></div>
         </div>
 
         <div id="videoSection" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center">
-                <input type="file" id="videoInput" accept="video/*" class="flex-1 text-slate-500">
-                <button onclick="forceStartAnalysis()" id="startBtn" class="w-full md:w-auto px-8 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2">
-                    <span>▶️</span> START AI ANALYSIS
-                </button>
+            <div class="bg-white p-4 rounded-xl shadow-sm flex flex-col md:flex-row gap-4">
+                <input type="file" id="videoInput" accept="video/*" class="flex-1">
+                <button onclick="startAI()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md">▶ START AI ANALYSIS</button>
             </div>
-            <div id="vStatus" class="text-center py-4 rounded-2xl text-2xl font-black bg-slate-200 text-slate-400 uppercase">1. Upload 2. Start</div>
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                <video id="vSource" controls class="w-full rounded-3xl bg-black shadow-2xl aspect-video"></video>
+            <div id="vStatus" class="text-center py-4 rounded-xl text-xl font-black bg-slate-200 text-slate-400">UPLOAD & PRESS START</div>
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <video id="vSource" playsinline muted class="w-full rounded-xl bg-black shadow-lg"></video>
                 <canvas id="vCanvas"></canvas>
             </div>
         </div>
     </div>
 
     <script>
-        const API_URL = "https://phuwarin-my-cnn-api.hf.space/predict"; 
-        const systemLog = document.getElementById('systemLog');
+        const API_URL = "https://phuwarin-my-cnn-api.hf.space/predict";
         const vSource = document.getElementById('vSource');
         const vCanvas = document.getElementById('vCanvas');
         const ctx = vCanvas.getContext('2d', { willReadFrequently: true });
+        const systemLog = document.getElementById('systemLog');
         const confSli = document.getElementById('confThreshold');
         const pxInp = document.getElementById('pxThreshold');
 
@@ -87,15 +80,18 @@
         function setMode(m) {
             document.getElementById('imageSection').classList.toggle('hidden', m !== 'image');
             document.getElementById('videoSection').classList.toggle('hidden', m !== 'video');
-            document.getElementById('btnImage').className = m === 'image' ? 'px-6 py-2.5 rounded-xl font-bold bg-blue-600 text-white shadow-lg' : 'px-6 py-2.5 rounded-xl font-bold bg-slate-50 text-slate-500';
-            document.getElementById('btnVideo').className = m === 'video' ? 'px-6 py-2.5 rounded-xl font-bold bg-blue-600 text-white shadow-lg' : 'px-6 py-2.5 rounded-xl font-bold bg-slate-50 text-slate-500';
+            document.getElementById('btnImage').className = m === 'image' ? 'px-4 py-2 rounded-lg font-bold bg-blue-600 text-white' : 'px-4 py-2 rounded-lg font-bold bg-slate-100 text-slate-500';
+            document.getElementById('btnVideo').className = m === 'video' ? 'px-4 py-2 rounded-lg font-bold bg-blue-600 text-white' : 'px-4 py-2 rounded-lg font-bold bg-slate-100 text-slate-500';
+            if(m === 'image') vSource.pause();
         }
 
-        // --- IMAGE LOGIC (Already Working) ---
+        confSli.oninput = () => document.getElementById('confVal').innerText = confSli.value;
+
+        // Image Logic (Works 100%)
         document.getElementById('imageInput').onchange = async (e) => {
             for (let file of e.target.files) {
                 const id = 'img-' + Math.random().toString(36).substr(2, 5);
-                document.getElementById('imageResultsList').insertAdjacentHTML('afterbegin', `<div id="${id}" class="bg-white p-6 rounded-[2rem] border animate-pulse flex gap-6"><img src="${URL.createObjectURL(file)}" class="w-40 h-40 object-contain rounded-2xl"><div id="st-${id}" class="text-2xl font-black text-blue-500">Analysing...</div><img id="res-${id}" class="w-40 h-40 object-contain rounded-2xl hidden border-2 border-blue-500"></div>`);
+                document.getElementById('imageResultsList').insertAdjacentHTML('afterbegin', `<div id="${id}" class="bg-white p-4 rounded-xl border flex gap-4 animate-pulse"><img src="${URL.createObjectURL(file)}" class="w-32 h-32 object-contain rounded-lg shadow-inner"><div id="st-${id}" class="text-xl font-black text-blue-500">ANALYZING...</div><img id="res-${id}" class="w-32 h-32 object-contain rounded-lg hidden border-2 border-blue-500 bg-slate-900 shadow-xl"></div>`);
                 const fd = new FormData();
                 fd.append('image', file);
                 fd.append('conf_threshold', confSli.value);
@@ -106,48 +102,44 @@
                     document.getElementById('res-'+id).src = "data:image/jpeg;base64," + data.image;
                     document.getElementById('res-'+id).classList.remove('hidden');
                     document.getElementById('st-'+id).innerText = data.status;
-                    document.getElementById('st-'+id).className = `text-3xl font-black uppercase ${data.status === 'MISSING' ? 'text-red-600' : 'text-green-600'}`;
+                    document.getElementById('st-'+id).className = `text-3xl font-black ${data.status === 'MISSING' ? 'text-red-600' : 'text-green-600'}`;
                     document.getElementById(id).classList.remove('animate-pulse');
-                } catch(err) { addLog("Image API Error"); }
+                } catch(err) { addLog("API Error"); }
             }
         };
 
-        // --- VIDEO LOGIC (The Fix) ---
+        // Video Logic (Final Fix)
         document.getElementById('videoInput').onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
-                const url = URL.createObjectURL(file);
-                vSource.src = url;
-                vSource.load(); // บังคับโหลดไฟล์เข้าตัวเล่น
-                addLog("Video loading...");
-                vSource.onloadedmetadata = () => {
-                    addLog("Video ready for AI analysis.");
-                    document.getElementById('vStatus').innerText = "READY: PRESS START BUTTON";
+                addLog("Loading video file...");
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    vSource.src = event.target.result;
+                    vSource.oncanplay = () => {
+                        addLog("Video data ready in memory.");
+                        document.getElementById('vStatus').innerText = "READY: PRESS START BUTTON";
+                    };
                 };
+                reader.readAsDataURL(file); // อ่านไฟล์เป็น Data URL (Base64) เพื่อแก้เรื่อง Source error
             }
         };
 
-        async function forceStartAnalysis() {
-            if (!vSource.src || vSource.src === "") {
-                addLog("Error: No video file.");
-                alert("กรุณาเลือกวิดีโอก่อนครับ");
-                return;
-            }
+        async function startAI() {
+            if (!vSource.src) return alert("Please select a video file first.");
+            addLog("AI Loop Starting...");
             try {
-                addLog("Starting Playback & AI...");
                 await vSource.play();
-                startAnalysisLoop();
+                loop();
             } catch (err) {
-                addLog("Playback Blocked: " + err.message);
-                // ถ้า play ไม่ได้ ให้พยายามรัน loop ดื้อๆ เลย (บาง Browser ยอม)
-                startAnalysisLoop();
+                addLog("Playback error: " + err.message);
+                loop(); // พยายามรันต่อแม้วิดีโอไม่ขยับ
             }
         }
 
-        async function startAnalysisLoop() {
+        async function loop() {
             if (vSource.paused || vSource.ended) return;
 
-            // ตั้งค่าขนาด Canvas
             vCanvas.width = vSource.videoWidth;
             vCanvas.height = vSource.videoHeight;
             ctx.drawImage(vSource, 0, 0, vCanvas.width, vCanvas.height);
@@ -155,7 +147,7 @@
             vCanvas.toBlob(async (blob) => {
                 if(!blob) return;
                 const fd = new FormData();
-                fd.append('image', blob, 'frame.jpg');
+                fd.append('image', blob, 'f.jpg');
                 fd.append('conf_threshold', confSli.value);
                 fd.append('px_threshold', pxInp.value);
 
@@ -168,13 +160,13 @@
                             ctx.clearRect(0, 0, vCanvas.width, vCanvas.height);
                             ctx.drawImage(img, 0, 0, vCanvas.width, vCanvas.height);
                             updateVStatus(data.status);
-                            if(!vSource.paused) requestAnimationFrame(startAnalysisLoop);
+                            requestAnimationFrame(loop);
                         };
                         img.src = "data:image/jpeg;base64," + data.image;
                     }
                 } catch (e) {
-                    addLog("API Error, retrying...");
-                    setTimeout(startAnalysisLoop, 1000);
+                    addLog("Retrying frame...");
+                    setTimeout(loop, 1000);
                 }
             }, 'image/jpeg', 0.5);
         }
