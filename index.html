@@ -143,46 +143,50 @@
         };
 
         // การทำงานวิดีโอ
+        // 1. ฟังก์ชันเลือกไฟล์วิดีโอ (เพิ่มการบังคับโหลดภาพแรก)
         document.getElementById('videoInput').onchange = (e) => {
-            if(e.target.files[0]) {
-                vSource.src = URL.createObjectURL(e.target.files[0]);
-                document.getElementById('vStatus').innerText = "วิดีโอโหลดเสร็จแล้ว พร้อมเริ่มวิเคราะห์";
-                addLog("โหลดวิดีโอสำเร็จ");
+            const file = e.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                vSource.src = url;
+                vSource.load(); // บังคับให้โหลดไฟล์
+                vSource.onloadedmetadata = () => {
+                    // ตั้งค่า Canvas ให้เท่ากับขนาดวิดีโอจริงทันที
+                    vCanvas.width = vSource.videoWidth;
+                    vCanvas.height = vSource.videoHeight;
+                    document.getElementById('vStatus').innerText = "วิดีโอพร้อมแล้ว! กดปุ่มเริ่มวิเคราะห์";
+                    addLog("วิดีโอโหลดสำเร็จ: " + vSource.videoWidth + "x" + vSource.videoHeight);
+                };
             }
         };
 
+        // 2. ฟังก์ชันเริ่มการทำงาน (เพิ่มการเช็คสถานะการเล่น)
         async function startAI() {
-            if (!vSource.src) return alert("กรุณาเลือกวิดีโอก่อนครับ");
-            
-            addLog("🎥 กำลังสั่งให้วิดีโอเริ่มเล่น...");
+            if (!vSource.src) return alert("กรุณาเลือกไฟล์วิดีโอก่อน");
             
             try {
-                // บังคับให้วิดีโอต้นฉบับเล่น
-                await vSource.play(); 
-                
-                // ตรวจสอบว่าวิดีโอมีขนาดกว้างยาวเท่าไหร่ แล้วตั้งค่า Canvas ให้ตรงกัน
-                vCanvas.width = vSource.videoWidth;
-                vCanvas.height = vSource.videoHeight;
-                
-                addLog("🚀 เริ่มประมวลผลเฟรมภาพแบบ Real-time...");
-                processFrame();
+                addLog("🎥 กำลังเริ่มต้นการเล่นวิดีโอ...");
+                await vSource.play(); // เริ่มเล่นวิดีโอต้นฉบับ
+                processFrame(); // เริ่มส่งให้ AI
             } catch (err) {
-                addLog("❌ Error: วิดีโอเล่นไม่ได้ (เช็คว่าไฟล์เสียหรือไม่)");
-                console.error(err);
+                addLog("❌ แถบแจ้งเตือน: คลิกที่วิดีโอหนึ่งครั้งเพื่ออนุญาตให้เล่นภาพ");
             }
         }
 
+        // 3. ฟังก์ชันประมวลผล (ปรับให้ Real-time และโชว์ภาพตลอดเวลา)
         async function processFrame() {
-            // ถ้าวิดีโอหยุด หรือจบ ให้เลิกทำ
             if (vSource.paused || vSource.ended) return;
 
-            // 1. วาดภาพปัจจุบันจากวิดีโอลงไปในช่อง Canvas ฝั่งขวาทันที (เพื่อให้เห็นว่าระบบทำงาน)
+            // วาดเฟรมปัจจุบันลง Canvas ทันที (เพื่อให้ช่องขวาไม่ดำ)
             ctx.drawImage(vSource, 0, 0, vCanvas.width, vCanvas.height);
 
-            // 2. ส่งเฟรมนี้ไปให้ AI ในเครื่องประมวลผล
+            // ส่งไป AI
             vCanvas.toBlob(async (blob) => {
-                if (!blob) return;
-                
+                if (!blob) {
+                    requestAnimationFrame(processFrame);
+                    return;
+                }
+
                 const fd = new FormData();
                 fd.append('image', blob, 'frame.jpg');
                 fd.append('conf_threshold', confSli.value);
@@ -195,25 +199,24 @@
                     if (data.success && data.image) {
                         const img = new Image();
                         img.onload = () => {
-                            // 3. เมื่อ AI ส่งภาพที่มีกรอบสี/สีแดงกลับมา ให้วาดทับลงบน Canvas เดิม
+                            // วาดภาพที่ AI ใส่ Mask/กรอบ กลับมาทับ
                             ctx.clearRect(0, 0, vCanvas.width, vCanvas.height);
                             ctx.drawImage(img, 0, 0, vCanvas.width, vCanvas.height);
-                            
-                            // อัปเดตแถบสีสถานะ
                             updateVStatus(data.status);
                             
-                            // 4. วนลูปเรียกเฟรมถัดไป
+                            // เรียกเฟรมถัดไป
                             requestAnimationFrame(processFrame);
                         };
                         img.src = "data:image/jpeg;base64," + data.image;
+                    } else {
+                        requestAnimationFrame(processFrame);
                     }
                 } catch (e) {
-                    // ถ้าหลุด ให้รอครึ่งวินาทีแล้วลองใหม่
-                    setTimeout(processFrame, 500);
+                    // ถ้า Error ให้พยายามรันต่อใน 100ms
+                    setTimeout(processFrame, 100);
                 }
-            }, 'image/jpeg', 0.4); 
+            }, 'image/jpeg', 0.5);
         }
-
         function updateVStatus(s) {
             const el = document.getElementById('vStatus');
             el.innerText = s === "MISSING" ? "🚨 ตรวจพบความผิดปกติ" : "✅ สถานะปกติ";
@@ -222,5 +225,6 @@
     </script>
 </body>
 </html>
+
 
 
