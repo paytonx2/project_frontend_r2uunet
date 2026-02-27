@@ -121,35 +121,34 @@
             const file = input.files[0];
             if (!file) return;
 
-            addLog("⏳ กำลังอ่านไฟล์วิดีโอด้วย FileReader...");
+            addLog("⏳ กำลังโหลดไฟล์: " + file.name);
             const reader = new FileReader();
 
-            // เคลียร์ค่าเดิม
-            if (isCameraOpen) stopAll();
-            vSource.pause();
-            vSource.src = "";
-            vSource.load();
-
             reader.onload = function(e) {
-                addLog("✅ อ่านข้อมูลไฟล์สำเร็จ กำลังโหลดเข้าเครื่องเล่น...");
-                
-                // ใช้ผลลัพธ์จาก Reader เป็น Source โดยตรง
+                // บังคับยัด Source และสั่ง Load ซ้ำ
                 vSource.src = e.target.result;
+                vSource.load(); 
                 
-                vSource.onloadedmetadata = function() {
-                    vSource.muted = true;
+                // ปลดล็อคค่าเบื้องต้น
+                vSource.muted = true;
+                vSource.currentTime = 0.1; // เลื่อนไปนิดนึงเพื่อกระตุ้นเฟรมแรก
+
+                vSource.onloadeddata = function() {
+                    addLog("✅ วิดีโอ Render สำเร็จ!");
                     vSource.play().then(() => {
-                        addLog("🚀 วิดีโอเริ่มทำงานแล้ว!");
                         vCanvas.width = vSource.videoWidth;
                         vCanvas.height = vSource.videoHeight;
                         document.getElementById('runBtn').disabled = false;
                         document.getElementById('runBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-                        document.getElementById('vStatus').innerText = "พร้อมประมวลผล";
+                        document.getElementById('vStatus').innerText = "วิดีโอมาแล้ว! กดเริ่มรัน AI ได้เลย";
                     }).catch(err => {
-                        addLog("⚠️ เบราว์เซอร์บล็อก Auto-play กรุณากดปุ่ม Play ที่วิดีโอ");
+                        addLog("⚠️ คลิกที่จอด้านซ้ายหนึ่งครั้งเพื่อเริ่มเล่น");
                     });
                 };
             };
+
+            reader.readAsDataURL(file);
+        }
 
             reader.onerror = function() {
                 addLog("❌ FileReader เกิดข้อผิดพลาดในการอ่านไฟล์");
@@ -314,5 +313,6 @@
     </script>
 </body>
 </html>
+
 
 
