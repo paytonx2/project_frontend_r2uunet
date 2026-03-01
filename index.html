@@ -29,6 +29,14 @@
         
         <div class="space-y-5">
             <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Select AI Model</label>
+                <select id="modelSelect" class="w-full bg-slate-800 p-3 rounded-xl border border-slate-700 outline-none text-blue-400 font-bold focus:border-blue-500 transition-all cursor-pointer">
+                    <option value="defect">Defect Detection (128x128)</option>
+                    <option value="tank_screw">Tank Screw Model (256x256)</option>
+                </select>
+            </div>
+
+            <div>
                 <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Pixel Threshold</label>
                 <input type="number" id="pxThreshold" value="15" class="w-full bg-slate-800 p-3 rounded-xl border border-slate-700 outline-none text-blue-400 font-bold focus:border-blue-500 transition-all">
             </div>
@@ -114,7 +122,7 @@
             </div>
             
             <div id="imageResultsList" class="space-y-4">
-                </div>
+            </div>
         </section>
     </main>
 
@@ -124,6 +132,7 @@
         const vCanvas = document.getElementById('vCanvas');
         const ctx = vCanvas.getContext('2d');
         const systemLog = document.getElementById('systemLog');
+        const modelSelect = document.getElementById('modelSelect');
         
         let isAIRunning = false;
         let isCameraOpen = false;
@@ -178,7 +187,7 @@
             if (isAIRunning) {
                 btn.innerText = "⏸️ Stop AI Analysis";
                 btn.classList.replace('bg-blue-600', 'bg-rose-500');
-                addLog("🚀 Inference Loop Started");
+                addLog(`🚀 Inference Loop Started (${modelSelect.value})`);
                 vSource.play();
                 renderLoop();
             } else {
@@ -201,6 +210,7 @@
                 if (!blob || !isAIRunning) return;
                 const fd = new FormData();
                 fd.append('image', blob, 'frame.jpg');
+                fd.append('model_type', modelSelect.value); // ส่งค่าโมเดลที่เลือก
                 fd.append('px_threshold', document.getElementById('pxThreshold').value);
                 fd.append('conf_threshold', document.getElementById('inpConfidence').value);
 
@@ -226,7 +236,7 @@
         async function handleImageUpload(input) {
             const files = input.files;
             if (!files.length) return;
-            addLog(`🖼️ Processing ${files.length} Images...`);
+            addLog(`🖼️ Processing ${files.length} Images using ${modelSelect.value}...`);
             
             for (let file of files) {
                 const id = 'img-' + Math.random().toString(36).substr(2, 5);
@@ -254,6 +264,7 @@
 
                 const fd = new FormData();
                 fd.append('image', file);
+                fd.append('model_type', modelSelect.value); // ส่งค่าโมเดลที่เลือก
                 fd.append('px_threshold', document.getElementById('pxThreshold').value);
                 fd.append('conf_threshold', document.getElementById('inpConfidence').value);
 
@@ -292,14 +303,14 @@
         }
 
         function saveLog(source, status, px) {
-            inspectionData.push({ time: new Date().toLocaleString(), source, status, px });
+            inspectionData.push({ time: new Date().toLocaleString(), source, status, px, model: modelSelect.value });
             document.getElementById('logCount').innerText = `${inspectionData.length} Items`;
         }
 
         function exportToCSV() {
             if (!inspectionData.length) return alert("No Data Found");
-            let csv = "\uFEFFTimestamp,Source,Status,Pixels\n";
-            inspectionData.forEach(r => csv += `${r.time},${r.source},${r.status},${r.px}\n`);
+            let csv = "\uFEFFTimestamp,Source,Status,Pixels,Model\n";
+            inspectionData.forEach(r => csv += `${r.time},${r.source},${r.status},${r.px},${r.model}\n`);
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
