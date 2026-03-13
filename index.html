@@ -9,7 +9,10 @@
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700&display=swap');
         body { font-family: 'Kanit', sans-serif; background: #f0f2f5; color: #1e293b; }
         .log-box { font-family: monospace; font-size: 11px; height: 120px; overflow-y: auto; background: #1a1a1a; color: #00ff00; padding: 12px; border-radius: 12px; border: 1px solid #334155; }
-        video, canvas { background: #000; width: 100%; min-height: 320px; border-radius: 20px; border: 2px solid #334155; display: block; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        
+        /* 👇 ตรงนี้คือบรรทัดที่ปรับแก้แล้วครับ เพิ่ม max-height และ object-fit เข้าไป */
+        video, canvas { background: #000; width: 100%; min-height: 320px; max-height: 400px; object-fit: contain; border-radius: 20px; border: 2px solid #334155; display: block; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        
         .active-mode { background-color: #2563eb !important; color: white !important; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
         .img-label { position: absolute; top: 12px; left: 12px; background: rgba(15, 23, 42, 0.8); color: #60a5fa; padding: 4px 12px; border-radius: 8px; font-size: 10px; font-weight: bold; z-index: 10; letter-spacing: 0.05em; }
         .result-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -341,6 +344,7 @@
     </script>
 </body>
 </html>
+
 
 
 
